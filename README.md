@@ -74,19 +74,19 @@ In CSS, work in millimetres through the variables the SDK publishes:
 .ring   { width: calc(var(--puck-d) + 40 * var(--mm)); }
 ```
 
-**Read [`docs/HOUSE-RULES.md`](docs/HOUSE-RULES.md) before writing anything.** It
-has the full API and the design rules that decide whether an interface survives
-contact with the real table. [`docs/EVENT-API.md`](docs/EVENT-API.md) documents
-the data model and wire protocol.
+**Read [`docs/DESIGN-RULES.md`](docs/DESIGN-RULES.md) before writing anything.**
+It is short, and it decides whether an interface survives contact with the real
+table. [`docs/API.md`](docs/API.md) is the complete SDK reference, and
+[`docs/PROTOCOL.md`](docs/PROTOCOL.md) documents the data model and wire format.
 
 ## Examples
 
 | Folder                | What it demonstrates                                                             |
 | --------------------- | -------------------------------------------------------------------------------- |
-| `apps/_template/`     | The smallest thing that works. Copy this to start.                               |
-| `apps/dial-demo/`     | A puck as a rotary dial. DOM and CSS transforms, millimetre geometry, per-puck state for several users at once. |
-| `apps/radial-atlas/`  | Multi-level radial menus, and loading real content: a local `content.json` plus image files on disk. |
-| `apps/arcane-table/`  | A Three.js showcase: bloom, a flowing particle field, procedural runes, and electrical arcs between pucks. |
+| `examples/_template/`     | The smallest thing that works. Copy this to start.                               |
+| `examples/dial-demo/`     | A puck as a rotary dial. DOM and CSS transforms, millimetre geometry, per-puck state for several users at once. |
+| `examples/radial-atlas/`  | Multi-level radial menus, and loading real content: a local `content.json` plus image files on disk. |
+| `examples/arcane-table/`  | A Three.js showcase: bloom, a flowing particle field, procedural runes, and electrical arcs between pucks. |
 
 ![Nested radial menus loading plate content](docs/images/radial-atlas.jpg)
 
@@ -96,7 +96,7 @@ script, stylesheet, image, font, model, or shader at any depth, and remote
 
 ![The Three.js showcase](docs/images/arcane-table.jpg)
 
-`arcane-table` is also the reference for the three things that catch people out
+`examples/arcane-table/` is also the reference for the three things that catch people out
 in WebGL on a table: never multiply by `devicePixelRatio` (the surface is already
 at native resolution), never use `THREE.Line` (WebGL clamps line width to one
 pixel, which is 0.3mm here), and size everything in millimetres.
@@ -104,10 +104,12 @@ pixel, which is 0.3mm here), and size everything in millimetres.
 ## The desktop app
 
 `npm run dist:mac` / `dist:win` produce a double-clickable app for people who do
-not want a terminal. It still lets them author interfaces: apps live in a
-**workspace** folder on disk, seeded on first run with the examples, SDK type
-declarations, and the design rules. The app watches that folder, so saving a file
-reloads the interface with the pucks left where they were.
+not want a terminal. It still lets them author interfaces: interfaces live in a
+**workspace** folder on disk, seeded on first run with the examples, the API and
+design-rules docs, SDK type declarations, and agent guidance. **New interface…**
+scaffolds a named folder ready to edit, and the recent-workspaces picker keeps one
+workspace per project. The app watches the folder, so saving a file reloads the
+interface with the pucks left where they were.
 
 See [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md) for packaging, code signing,
 and what a first-time user has to click past.
@@ -118,10 +120,10 @@ and what a first-time user has to click past.
 | ----------------------- | ----------------------------------------------------------------- |
 | `src/host/`             | The simulator: surface geometry, state model, input, inspector, app hosting. |
 | `src/sdk/`              | `@planchette/sdk`, the only module an interface imports.                |
-| `apps/<id>/`            | Example interfaces. Seeded into a fresh workspace.                |
+| `examples/<id>/`        | Example interfaces. Seeded into a fresh workspace.                |
 | `electron/`             | The desktop shell: custom protocol, workspace, file watching.      |
 | `scripts/`              | Workspace seed assembly, ad-hoc signing, the smoke test.           |
-| `docs/`                 | Design rules, wire protocol, distribution.                         |
+| `docs/`                 | API reference, design rules, wire protocol, distribution.          |
 
 ## Scripts
 

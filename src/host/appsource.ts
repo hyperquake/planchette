@@ -1,21 +1,32 @@
 /**
- * Where designer apps come from.
+ * Where interfaces come from.
  *
- * In the browser they are folders in this repo, discovered at build time and
- * served by Vite. In the packaged desktop app they live in a workspace folder on
- * the user's disk, listed over IPC and served by the custom protocol handler.
+ * In the browser they are the example folders in this repo, discovered at build
+ * time and served by Vite from `/examples/`. In the packaged desktop app they
+ * live in a workspace folder on the user's disk, listed over IPC and served from
+ * `/workspace/` by the custom protocol handler.
  *
- * Both serve apps at the same URL path, `/apps/<id>/index.html`, so nothing
- * downstream of here has to care which one it is talking to.
+ * The paths differ; the origin does not. That is what matters: one origin means
+ * no CORS, and `urlFor` is the single place that knows the difference, so nothing
+ * downstream has to.
  */
 
 /** Implemented by electron/preload.cjs. Absent in a plain browser. */
+export interface WorkspaceList {
+  current: string
+  /** Most recent first. */
+  recent: string[]
+}
+
 export interface DesktopBridge {
   listApps(): Promise<string[]>
   workspacePath(): Promise<string>
-  chooseWorkspace(): Promise<string | null>
+  listWorkspaces(): Promise<WorkspaceList>
+  useWorkspace(dir: string): Promise<WorkspaceList>
+  forgetWorkspace(dir: string): Promise<WorkspaceList>
+  chooseWorkspace(): Promise<WorkspaceList | null>
   reveal(appId?: string): Promise<void>
-  createApp(name: string): Promise<string>
+  createInterface(name: string): Promise<string>
   onAppsChanged(cb: (appId: string | null) => void): void
   onReloadApp(cb: () => void): void
   onChooseWorkspace(cb: () => void): void
@@ -24,9 +35,12 @@ export interface DesktopBridge {
 
 export interface Workspace {
   path(): Promise<string>
-  choose(): Promise<string | null>
+  list(): Promise<WorkspaceList>
+  use(dir: string): Promise<WorkspaceList>
+  forget(dir: string): Promise<WorkspaceList>
+  choose(): Promise<WorkspaceList | null>
   reveal(appId?: string): Promise<void>
-  createApp(name: string): Promise<string>
+  createInterface(name: string): Promise<string>
 }
 
 export interface AppSource {
@@ -46,20 +60,18 @@ declare global {
 }
 
 /**
- * Folder names under apps/ with an index.html. The glob is not eager, so this
- * costs nothing at runtime; we only want the keys.
+ * Folder names under examples/ with an index.html. The glob is not eager, so
+ * this costs nothing at runtime; we only want the keys.
  */
-const WEB_APPS: string[] = Object.keys(import.meta.glob('/apps/*/index.html'))
+const WEB_APPS: string[] = Object.keys(import.meta.glob('/examples/*/index.html'))
   .map((p) => p.split('/')[2]!)
   .sort()
-
-const urlFor = (appId: string): string => `/apps/${appId}/index.html`
 
 function webSource(): AppSource {
   return {
     kind: 'web',
     list: async () => WEB_APPS,
-    urlFor,
+    urlFor: (id) => `/examples/${id}/index.html`,
     // Vite's own client reloads the iframe on save, so there is nothing to do.
     onChange: () => {},
     workspace: null,
@@ -70,13 +82,16 @@ function desktopSource(bridge: DesktopBridge): AppSource {
   return {
     kind: 'desktop',
     list: () => bridge.listApps(),
-    urlFor,
+    urlFor: (id) => `/workspace/${id}/index.html`,
     onChange: (cb) => bridge.onAppsChanged(cb),
     workspace: {
       path: () => bridge.workspacePath(),
+      list: () => bridge.listWorkspaces(),
+      use: (dir) => bridge.useWorkspace(dir),
+      forget: (dir) => bridge.forgetWorkspace(dir),
       choose: () => bridge.chooseWorkspace(),
       reveal: (appId) => bridge.reveal(appId),
-      createApp: (name) => bridge.createApp(name),
+      createInterface: (name) => bridge.createInterface(name),
     },
   }
 }

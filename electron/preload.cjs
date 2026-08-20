@@ -8,9 +8,12 @@ const { contextBridge, ipcRenderer } = require('electron')
 contextBridge.exposeInMainWorld('planchette', {
   listApps: () => ipcRenderer.invoke('apps:list'),
   workspacePath: () => ipcRenderer.invoke('workspace:path'),
+  listWorkspaces: () => ipcRenderer.invoke('workspace:list'),
+  useWorkspace: (dir) => ipcRenderer.invoke('workspace:use', dir),
+  forgetWorkspace: (dir) => ipcRenderer.invoke('workspace:forget', dir),
   chooseWorkspace: () => ipcRenderer.invoke('workspace:choose'),
   reveal: (appId) => ipcRenderer.invoke('workspace:reveal', appId),
-  createApp: (name) => ipcRenderer.invoke('apps:create', name),
+  createInterface: (name) => ipcRenderer.invoke('interface:create', name),
 
   onAppsChanged: (cb) => ipcRenderer.on('apps:changed', (_e, appId) => cb(appId)),
   onReloadApp: (cb) => ipcRenderer.on('app:reload', () => cb()),

@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <title>Planchette</title>
+<!-- Served from public/, so these resolve the same under Vite and under
+     planchette://host. The .ico carries the small sizes as a solid lens. -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
 <style>
   :root {
     --bg: #14161a; --panel: #1b1e24; --line: #2b3038; --ink: #d8dde5;
@@ -106,7 +110,11 @@
   .ws-row { display: flex; gap: 5px; margin-top: 6px; }
   .ws-row button { flex: 1; white-space: nowrap; }
   .ws-row input { flex: 1; min-width: 0; }
-  #workspace-path { max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #ws-select { width: 100%; min-width: 0; }
+  .ws-path {
+    margin-top: 5px; font-family: var(--mono); font-size: 10px; color: #6b7385;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left;
+  }
   #ws-status:not(:empty) { margin-top: 6px; font-size: 11px; color: #e08b6a; }
   .keys { font-size: 11px; color: var(--dim); line-height: 1.7; }
   .keys kbd {
@@ -149,11 +157,17 @@
   <aside id="inspector">
     <section id="workspace-section" hidden>
       <h2>Workspace</h2>
-      <div class="kv"><span>folder</span><b id="workspace-path"></b></div>
+      <div class="ws-row">
+        <select id="ws-select" title="Recent workspaces"></select>
+      </div>
+      <div class="ws-path" id="workspace-path"></div>
       <div class="ws-row">
         <button id="ws-reveal" title="Show this folder in the file manager">Open folder</button>
-        <button id="ws-change">Change&hellip;</button>
-        <button id="ws-new">New app&hellip;</button>
+        <button id="ws-change" title="Pick another folder to work in">Add&hellip;</button>
+        <button id="ws-forget" title="Remove from the recent list">Forget</button>
+      </div>
+      <div class="ws-row">
+        <button id="ws-new" title="Create a folder with starter files, ready to edit">New interface&hellip;</button>
       </div>
       <div class="ws-row" id="ws-new-form" hidden>
         <input id="ws-new-name" type="text" placeholder="my-interface">

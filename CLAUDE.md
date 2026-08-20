@@ -1,8 +1,8 @@
 # Working on the simulator
 
 This file is for developing **the simulator itself**. If you are writing an
-interface that runs on the table, read [`docs/HOUSE-RULES.md`](docs/HOUSE-RULES.md)
-instead; almost nothing here applies to that.
+interface that runs on the table, read [`docs/DESIGN-RULES.md`](docs/DESIGN-RULES.md)
+and [`docs/API.md`](docs/API.md) instead; almost nothing here applies to that.
 
     npm run dev      # http://localhost:5173
     npm run check    # TypeScript
@@ -18,7 +18,7 @@ Four parts, and the boundaries between them are load-bearing:
 - **`src/sdk/`** is what an interface imports. It is the public contract, so the
   wire types live here in `types.ts` and the host imports them from the SDK, not
   the other way round.
-- **`apps/<id>/`** are example interfaces, served as static files.
+- **`examples/<id>/`** are example interfaces, served as static files.
 - **`electron/`** is a shell: a custom `planchette://` protocol, a workspace folder on
   disk, and a file watcher. It adds distribution, not behaviour.
 
@@ -35,10 +35,11 @@ is wrong.
    scaled down by a transform on an ancestor. One CSS pixel inside an interface
    is always one real table pixel; only the preview shrinks. This is the whole
    reason the simulator is trustworthy about size.
-2. **`appSource.urlFor()` returns the same path in both environments**, so the
-   packaged app serves the host UI and interfaces from one origin
-   (`planchette://host`). Do not give interfaces their own origin without a reason:
-   same-origin is what keeps the renderer free of environment checks.
+2. **The host UI and interfaces share one origin** (`planchette://host`): the UI
+   from the bundle, interfaces from `/workspace/`. The web build serves examples
+   from `/examples/` instead, and `appSource.urlFor()` is the single place that
+   knows the difference. One origin is what matters; do not give interfaces their
+   own origin without a reason.
 3. **The SDK folds each event into its cached state before dispatching it.** A
    handler calling `table.state()` or `nearestPuck()` must see a table that
    already includes the thing it is being told about. Relying on the
@@ -51,9 +52,10 @@ is wrong.
    radians, 0 pointing up, clockwise positive. A session `id` that changes on
    re-acquisition, and a `markerId` that does not. Keep these exact; they are the
    hardware bridge's contract.
-6. **The host persists pucks to `sessionStorage`.** Editing a file under `apps/`
-   makes Vite full-reload every connected client, the host page included. Without
-   persistence a designer loses their whole arrangement on every save.
+6. **The host persists pucks to `sessionStorage`.** Editing a file under
+   `examples/` makes Vite full-reload every connected client, the host page
+   included. Without persistence a designer loses their whole arrangement on
+   every save.
 7. **`backgroundThrottling: false`** in the Electron window. Interfaces render in
    a `requestAnimationFrame` loop, and Chromium throttles rAF hard once it decides
    a window is occluded. A designer watching the simulator while typing in another
@@ -95,7 +97,7 @@ rather than a bug. Taking a screenshot forces frames to run.
   binary, so it is approved in `package.json` under `allowScripts`, pinned to an
   exact version. Bumping Electron means re-running `npm approve-scripts electron`.
 - **WebGL clamps line width to 1 pixel**, which is 0.3mm on this panel and
-  therefore invisible. `apps/arcane-table/lib/ribbon.js` builds strokes from
+  therefore invisible. `examples/arcane-table/lib/ribbon.js` builds strokes from
   triangles instead.
 - **Never pass `devicePixelRatio` to a WebGL renderer here.** The surface is
   already at native resolution; on a retina laptop that would ask for four times
@@ -111,8 +113,12 @@ rather than a bug. Taking a screenshot forces frames to run.
 
 - **Add a surface preset**: `PRESETS` in `src/host/surface.ts`. Give the physical
   width in millimetres; height is derived from the pixel aspect.
-- **Add an example interface**: a folder under `apps/` with an `index.html`. It
-  appears in the picker automatically. Add it to `EXAMPLES` in
-  `scripts/build-seed.mjs` to ship it to designers.
+- **Add an example interface**: a folder under `examples/` with an `index.html`
+  and a `CLAUDE.md`. It appears in the picker automatically. Add it to `EXAMPLES`
+  in `scripts/build-seed.mjs` to ship it to designers.
 - **Change the event API**: `src/sdk/types.ts` first, then the host, then
-  `docs/EVENT-API.md`. Keep TUIO alignment in mind.
+  `docs/PROTOCOL.md` and `docs/API.md`. Keep TUIO alignment in mind.
+- **Icons**: `build/icon.icns` and `build/icon.ico` are discovered by filename
+  because `buildResources: build` is set. Do not add a `mac.icon`, `win.icon`, or
+  top-level `icon:` key, and do not rebuild them from a single PNG: each carries
+  two pieces of artwork, a solid lens below 48px and a knocked-out ring above.

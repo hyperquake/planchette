@@ -4,7 +4,7 @@
 
 The desktop build exists so a coworker can double-click an app instead of
 installing Node, and **still author interfaces**. That second half is why the
-app does not simply bake `apps/` into the bundle.
+app does not simply bake the examples into the bundle.
 
 Instead there is a **workspace**: a normal folder on disk, by default
 `~/Documents/Planchette` (Windows: `Documents\Planchette`). On first
@@ -21,13 +21,14 @@ puck arrangement survives, so the loop is: arrange pucks once, then edit freely.
 | ------------------------ | --------------------------------------------------------------- |
 | `electron/main.js`       | Serves everything over `planchette://`, owns the workspace and watcher. |
 | `electron/preload.cjs`   | The whole renderer-to-disk surface. Nothing else crosses.       |
-| `src/host/appsource.ts`  | Hides whether apps come from Vite or from the workspace.         |
+| `src/host/appsource.ts`  | Hides whether interfaces come from Vite or the workspace.         |
 | `scripts/build-seed.mjs` | Assembles `workspace-seed/`, what a fresh workspace gets.        |
 | `scripts/adhoc-sign.cjs` | Ad-hoc signs the macOS app so it will launch.                    |
 
-Host UI and designer apps share one origin, `planchette://host`, so an app's URL is
-`/apps/<id>/index.html` in both the packaged app and the dev server. That is what
-keeps the renderer free of environment checks.
+The host UI and the interfaces share one origin, `planchette://host`: the UI from
+the bundle, interfaces from `/workspace/`. The web build serves examples from
+`/examples/` instead, and `appSource.urlFor()` is the only place that knows the
+difference.
 
 Designer apps import `@planchette/sdk`, a bare specifier no browser can resolve. Vite
 handles it in development; the packaged app injects an import map into each
@@ -86,7 +87,7 @@ as a service with no desktop.
     npm run dev            # terminal 1: Vite
     npm run electron:dev   # terminal 2: Electron pointed at Vite
 
-In dev mode the workspace is the repo's own `apps/` folder, so the app list and
+In dev mode the workspace is the repo's own `examples/` folder, so the app list and
 the URLs agree about which apps exist. Switching workspace is a packaged-build
 feature.
 
@@ -117,9 +118,9 @@ Nothing here needs rework.
 
 ## Still to do
 
-- **App icon.** There is none, so builds carry the default Electron icon. Drop a
-  1024x1024 PNG at `build/icon.png` and electron-builder generates `.icns` and
-  `.ico` from it. Nothing else changes.
+- **A dock icon in development.** `npm run electron:dev` shows the stock Electron
+  icon, because `BrowserWindow` is not given an `icon` option. Only packaged
+  builds carry the real one.
 - **Auto-update.** Not wired. Coworkers get new builds by downloading them. If
   that becomes annoying, `electron-updater` plus a release feed is the usual next
   step, and it needs real signing on macOS to be worth it.

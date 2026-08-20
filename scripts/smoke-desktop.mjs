@@ -107,12 +107,21 @@ try {
   const sdk = await evaluate("const r = await fetch('/sdk.js'); return { status: r.status, type: r.headers.get('content-type'), hasExport: (await r.text()).includes('export') }")
   check('/sdk.js served as JavaScript', sdk?.status === 200 && sdk.type === 'text/javascript' && sdk.hasExport, `${sdk?.status} ${sdk?.type}`)
 
+  // Favicons come from public/, which Vite copies to the root of dist. Served
+  // over the custom protocol they need the right MIME type, and that is the part
+  // that can silently break once packaged.
+  const favicon = await evaluate("const r = await fetch('/favicon.svg'); return { status: r.status, type: r.headers.get('content-type') }")
+  check('favicon.svg served as image/svg+xml', favicon?.status === 200 && favicon.type === 'image/svg+xml', `${favicon?.status} ${favicon?.type}`)
+
+  const faviconIco = await evaluate("const r = await fetch('/favicon.ico'); return { status: r.status, type: r.headers.get('content-type') }")
+  check('favicon.ico served as image/x-icon', faviconIco?.status === 200 && faviconIco.type === 'image/x-icon', `${faviconIco?.status} ${faviconIco?.type}`)
+
   // App HTML gets an import map so the bare specifier resolves.
-  const html = await evaluate("const r = await fetch('/apps/dial-demo/index.html'); const t = await r.text(); return { status: r.status, importmap: t.includes('importmap'), mapped: t.includes('@planchette/sdk') }")
+  const html = await evaluate("const r = await fetch('/workspace/dial-demo/index.html'); const t = await r.text(); return { status: r.status, importmap: t.includes('importmap'), mapped: t.includes('@planchette/sdk') }")
   check('import map injected into app HTML', html?.status === 200 && html.importmap && html.mapped)
 
   // Path traversal out of the workspace is refused.
-  const escape = await evaluate("const r = await fetch('/apps/dial-demo/../../../../etc/passwd'); return r.status")
+  const escape = await evaluate("const r = await fetch('/workspace/dial-demo/../../../../etc/passwd'); return r.status")
   check('path traversal blocked', escape === 404, `status ${escape}`)
 
   // The workspace panel is visible only in the desktop build.
@@ -131,7 +140,7 @@ try {
   check('sim.apps reflects the workspace', Array.isArray(sim?.apps) && sim.apps.includes('dial-demo'))
 
   const connected = await evaluate("return document.getElementById('appframe').getAttribute('src')")
-  check('app iframe pointed at the workspace app', connected === '/apps/dial-demo/index.html', String(connected))
+  check('interface iframe pointed at the workspace', connected === '/workspace/dial-demo/index.html', String(connected))
 
   // The load-bearing check: the app imports the bare specifier '@planchette/sdk',
   // which only resolves if the injected import map worked. If it did, the app
@@ -158,6 +167,30 @@ try {
     return false;
   `)
   check('file watcher reloads the app', stampBefore === 1 && reloaded === true)
+
+  // The seeded workspace carries agent guidance, including a dotfile directory
+  // that electron-builder's extraResources globbing could plausibly drop.
+  const guidance = await fs.readdir(workspace)
+  const skill = path.join(workspace, '.claude', 'skills', 'planchette-interface', 'SKILL.md')
+  let skillExists = true
+  try {
+    await fs.stat(skill)
+  } catch {
+    skillExists = false
+  }
+  check('reference docs seeded', ['API.md', 'DESIGN-RULES.md', 'PROTOCOL.md', 'AGENTS.md'].every((f) => guidance.includes(f)))
+  check('agent skill survives packaging', skillExists, '.claude/skills/planchette-interface/SKILL.md')
+
+  // New interface scaffolding: the folder must describe itself, not the template.
+  const created = await evaluate("return await window.planchette.createInterface('My Test Rig')")
+  check('New interface slugs the name', created === 'my-test-rig', String(created))
+  const scaffoldDoc = await fs.readFile(path.join(workspace, 'my-test-rig', 'CLAUDE.md'), 'utf8')
+  const scaffoldHtml = await fs.readFile(path.join(workspace, 'my-test-rig', 'index.html'), 'utf8')
+  check('scaffolded CLAUDE.md names the interface', scaffoldDoc.startsWith('# My test rig') && scaffoldDoc.includes('DESIGN-RULES.md'))
+  check('scaffolded index.html is retitled', scaffoldHtml.includes('<title>My test rig</title>'))
+
+  const wsList = await evaluate('return await window.planchette.listWorkspaces()')
+  check('workspace list reports the current folder', wsList?.current === workspace && Array.isArray(wsList?.recent))
 
   // And the puck arrangement survives that reload, which is the whole point.
   const survived = await evaluate(`

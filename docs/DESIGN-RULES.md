@@ -1,42 +1,8 @@
-# Writing interfaces for the table
+# Designing for the table
 
-Everything in this file applies whether you are working in the simulator repo or
-in a workspace folder opened from the packaged app. It is the shared contract.
-
-## Writing an app
-
-Pull state for anything that draws, push events for discrete moments.
-
-```js
-import { table } from '@planchette/sdk'
-
-table.ready(({ surface }) => {
-  requestAnimationFrame(function loop() {
-    const { pucks, touches } = table.state()   // frozen snapshot
-    for (const p of pucks) {
-      // p.mmX / p.mmY are millimetres; p.angle is radians, 0 = up, clockwise.
-      place(el, table.mm(p.mmX), table.mm(p.mmY), p.angle)
-    }
-    requestAnimationFrame(loop)
-  })
-})
-
-table.on('puckadd', (p) => openPanelFor(p.markerId))
-table.on('touchstart', (t) => {
-  const puck = table.nearestPuck(t.mmX, t.mmY, 80)   // millimetres
-})
-```
-
-Helpers: `table.mm(v)`, `table.px(v)`, `table.deg(rad)`, `table.rad(deg)`,
-`table.puckById(id)`, `table.pucksByMarker(id)`, `table.nearestPuck(mmX, mmY, withinMm)`,
-`table.nearestTouch(...)`, `table.surface`, `table.isSolo`.
-
-In CSS, work in millimetres through the variables the SDK publishes:
-
-```css
-.button { min-width: calc(20 * var(--mm)); }   /* --mm, --px-per-mm */
-.ring   { width: calc(var(--puck-d) + 40 * var(--mm)); }
-```
+Rules that decide whether an interface survives contact with real hardware.
+Everything here applies whether you are working in the simulator repo or in a
+workspace folder. For the API itself see `API.md`.
 
 ## House rules
 
@@ -70,20 +36,6 @@ decide whether an interface survives contact with the real table.
   a value the loop computed (derive it from `table.state()` on demand instead),
   and do not assume the loop has already created whatever object the handler
   wants to touch. Create it on demand in the handler too.
-
-## Driving the simulator
-
-`window.sim` is available on the host page, in millimetres and degrees:
-
-```js
-sim.addPuck({ markerId: 3, mmX: 600, mmY: 340, angleDeg: 45 })   // -> id
-sim.movePuck(id, { mmX: 700, angleDeg: 90 })
-sim.removePuck(id)
-sim.touch({ mmX: 600, mmY: 400 })                                 // -> id
-sim.moveTouch(id, { mmX: 620 }); sim.endTouch(id)
-sim.loadApp('dial-demo'); sim.reload(); sim.clear()
-sim.state()
-```
 
 ## Known constraints
 

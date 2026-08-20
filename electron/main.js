@@ -10,9 +10,10 @@
  *  - A localhost server can trip the macOS firewall prompt on first launch,
  *    which is a bad first impression for something handed round a team.
  *
- * Host UI and apps deliberately share one origin (`planchette://host`), so an app's
- * URL is `/apps/<id>/index.html` in both the packaged app and the Vite dev
- * server. Nothing in the renderer has to know which one it is running under.
+ * The host UI and the interfaces deliberately share one origin
+ * (`planchette://host`): the UI is served from the bundle, interfaces from
+ * `/workspace/`. One origin means no CORS and no cross-origin restrictions
+ * between the two.
  */
 
 import { app, BrowserWindow, dialog, ipcMain, Menu, protocol, shell } from 'electron'
@@ -67,6 +68,32 @@ function writeSettings(next) {
 
 let workspace = ''
 
+/** Most recent first. Enough to cover a few concurrent client projects. */
+const MAX_RECENT = 8
+
+function recentWorkspaces() {
+  const saved = readSettings().recentWorkspaces
+  return Array.isArray(saved) ? saved.filter((p) => typeof p === 'string') : []
+}
+
+/** Record a workspace as current and move it to the front of the recent list. */
+function rememberWorkspace(dir) {
+  const recent = [dir, ...recentWorkspaces().filter((p) => p !== dir)].slice(0, MAX_RECENT)
+  writeSettings({ ...readSettings(), workspace: dir, recentWorkspaces: recent })
+}
+
+/**
+ * Switch to a workspace: seed it if it is empty, remember it, and re-point the
+ * watcher. Returns the list the renderer needs to redraw its picker.
+ */
+async function useWorkspace(dir, win) {
+  workspace = dir
+  await ensureWorkspace()
+  rememberWorkspace(dir)
+  if (win) watchWorkspace(win)
+  return { current: workspace, recent: recentWorkspaces() }
+}
+
 /**
  * Files copied into a fresh workspace: the two example apps, the house rules,
  * and SDK type declarations so an editor or a coding agent opened on that folder
@@ -110,7 +137,7 @@ async function ensureWorkspace() {
  * ------------------------------------------------------------------ */
 
 /**
- * An app folder is just a folder: its index.html may reference any local script,
+ * An interface folder is just a folder: its index.html may reference any local script,
  * stylesheet, image, font, model, or shader it likes, at any depth. Types that
  * the browser is strict about (scripts, styles, wasm) must be exact; the rest
  * fall through to a generic type, which is fine for anything fetched as a blob
@@ -247,8 +274,8 @@ function registerProtocol() {
     if (url.host !== 'host') return notFound()
     const pathname = decodeURIComponent(url.pathname)
 
-    // /apps/<id>/... comes from the workspace on disk.
-    const match = /^\/apps\/([^/]+)(?:\/(.*))?$/.exec(pathname)
+    // /workspace/<id>/... comes from the workspace folder on disk.
+    const match = /^\/workspace\/([^/]+)(?:\/(.*))?$/.exec(pathname)
     if (match) {
       const [, appId, rest] = match
       const file = safeJoin(workspace, appId, rest || 'index.html')
@@ -299,6 +326,55 @@ function watchWorkspace(win) {
  * IPC
  * ------------------------------------------------------------------ */
 
+/** "my-map-table" -> "My map table". Good enough for a title. */
+function titleCase(id) {
+  const words = id.replace(/[-_]+/g, ' ').trim()
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+/**
+ * Turn a fresh copy of the template into a named interface.
+ *
+ * The CLAUDE.md matters more than it looks: it is how an editor or a coding
+ * agent opened on this folder alone learns which system it is in, where the API
+ * is, and that the design rules exist. A folder that cannot explain itself gets
+ * the generic web treatment, which is wrong in every way that counts on a table.
+ */
+async function personalise(dir, id) {
+  const title = titleCase(id)
+
+  const indexPath = path.join(dir, 'index.html')
+  try {
+    const html = await fsp.readFile(indexPath, 'utf8')
+    await fsp.writeFile(indexPath, html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${title}</title>`))
+  } catch {
+    /* template without an index.html; nothing to retitle */
+  }
+
+  await fsp.writeFile(
+    path.join(dir, 'CLAUDE.md'),
+    `# ${title}
+
+An interface for the **Planchette** table simulator: a large multitouch surface
+that also tracks physical pucks, each reporting its own identity, position, and
+rotation.
+
+- \`index.html\` holds the markup and CSS. Size everything in millimetres via
+  \`calc(20 * var(--mm))\`, never in raw pixels.
+- \`main.js\` imports \`@planchette/sdk\` and reacts to pucks and contacts.
+- This folder is an ordinary static site. Reference any local file at any depth,
+  and remote https URLs too.
+
+Read **\`../DESIGN-RULES.md\`** before changing behaviour. It is short, and it is
+the difference between something that works on a laptop and something that works
+on a table with four people around it. The API reference is **\`../API.md\`**.
+
+The viewport is the table's real resolution, not a laptop window. There is no
+cursor, no hover, and no single selected thing.
+`,
+  )
+}
+
 /** Folder-safe, lowercase, no surprises on either platform. */
 function slugify(name) {
   return String(name)
@@ -312,6 +388,24 @@ function slugify(name) {
 function registerIpc(win) {
   ipcMain.handle('apps:list', () => listApps())
   ipcMain.handle('workspace:path', () => workspace)
+  ipcMain.handle('workspace:list', () => ({ current: workspace, recent: recentWorkspaces() }))
+
+  ipcMain.handle('workspace:use', async (_e, dir) => {
+    // Only switch to somewhere that still exists: a folder can be moved or a
+    // volume unmounted between sessions, and the recent list would go stale.
+    try {
+      if (!(await fsp.stat(dir)).isDirectory()) throw new Error('not a directory')
+    } catch {
+      throw new Error(`That folder is no longer there:\n${dir}`)
+    }
+    return useWorkspace(dir, win)
+  })
+
+  ipcMain.handle('workspace:forget', (_e, dir) => {
+    const recent = recentWorkspaces().filter((p) => p !== dir)
+    writeSettings({ ...readSettings(), recentWorkspaces: recent })
+    return { current: workspace, recent }
+  })
 
   ipcMain.handle('workspace:reveal', async (_e, appId) => {
     const target = appId ? safeJoin(workspace, appId) : workspace
@@ -325,14 +419,10 @@ function registerIpc(win) {
       defaultPath: workspace,
     })
     if (canceled || !filePaths[0]) return null
-    workspace = filePaths[0]
-    writeSettings({ ...readSettings(), workspace })
-    await ensureWorkspace()
-    watchWorkspace(win)
-    return workspace
+    return useWorkspace(filePaths[0], win)
   })
 
-  ipcMain.handle('apps:create', async (_e, rawName) => {
+  ipcMain.handle('interface:create', async (_e, rawName) => {
     const id = slugify(rawName)
     if (!id) throw new Error('Use letters and numbers for the name.')
     const dest = safeJoin(workspace, id)
@@ -340,8 +430,9 @@ function registerIpc(win) {
     if (fs.existsSync(dest)) throw new Error(`"${id}" already exists.`)
 
     const template = path.join(seedDir(), '_template')
-    if (!fs.existsSync(template)) throw new Error('The app template is missing from this build.')
+    if (!fs.existsSync(template)) throw new Error('The interface template is missing from this build.')
     await fsp.cp(template, dest, { recursive: true })
+    await personalise(dest, id)
     return id
   })
 }
@@ -451,6 +542,7 @@ app.whenReady().then(async () => {
       path.join(app.getPath('documents'), 'Planchette')
 
   await ensureWorkspace()
+  if (!DEV_URL) rememberWorkspace(workspace)
   registerProtocol()
   await createWindow()
 

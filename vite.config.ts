@@ -6,17 +6,17 @@ import { fileURLToPath } from 'node:url'
 const root = dirname(fileURLToPath(import.meta.url))
 
 /**
- * Every folder under apps/ that has an index.html becomes a build entry, so
- * designer apps survive `npm run build` and not just the dev server.
+ * Every folder under examples/ that has an index.html becomes a build entry, so
+ * the examples survive `npm run build` and not just the dev server.
  */
 function entries(): Record<string, string> {
   const out: Record<string, string> = { host: resolve(root, 'index.html') }
-  for (const name of readdirSync(resolve(root, 'apps'))) {
-    const index = resolve(root, 'apps', name, 'index.html')
+  for (const name of readdirSync(resolve(root, 'examples'))) {
+    const index = resolve(root, 'examples', name, 'index.html')
     try {
-      if (statSync(index).isFile()) out[`app-${name}`] = index
+      if (statSync(index).isFile()) out[`example-${name}`] = index
     } catch {
-      /* not an app folder */
+      /* not an example folder */
     }
   }
   return out

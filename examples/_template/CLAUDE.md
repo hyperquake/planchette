@@ -5,7 +5,7 @@ This folder is a starting point. Copy it, rename it, and edit `index.html` and
 automatically.
 
 In the desktop app, **New app...** in the Workspace panel does the copying for
-you. Working in the repo, copy this folder to `apps/<your-name>`.
+you. Working in the repo, copy this folder to `examples/<your-name>`.
 
 Read the `CLAUDE.md` next to this folder for the house rules. They matter more
 than the API does.
@@ -52,7 +52,7 @@ event currently being handled, so it is safe to call from inside a handler.
 
 ## Testing without the simulator
 
-Open the app's URL directly (`/apps/<your-name>/index.html`) and the SDK falls
+Open the interface's URL directly and the SDK falls
 back to solo mode: one draggable puck, wheel to rotate, `P` adds another, `X`
 removes one. The surface it reports is your browser window at the table's real
 px/mm, so millimetre sizing stays honest and you are simply working on a smaller

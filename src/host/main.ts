@@ -56,7 +56,7 @@ const savePrefs = () => localStorage.setItem(PREFS_KEY, JSON.stringify(prefs))
 /* ---------------- table state across reloads ---------------- */
 
 /**
- * Editing a file under apps/ makes Vite full-reload every connected client,
+ * Editing a file under examples/ makes Vite full-reload every connected client,
  * which includes this host page, not just the app iframe. Without persistence a
  * designer would lose their whole puck arrangement on every save, which is the
  * opposite of a fast iteration loop.
@@ -182,28 +182,65 @@ window.planchette?.onReloadApp(() => frame.reload())
 
 /* ---------------- workspace (desktop build only) ---------------- */
 
-/** Keep the tail of a long path, which is the part that identifies it. */
-function shortenPath(p: string, max = 38): string {
-  return p.length <= max ? p : `...${p.slice(-(max - 3))}`
-}
-
 async function setupWorkspace(): Promise<void> {
   const ws = appSource.workspace
   if (!ws) return
 
   $('#workspace-section').hidden = false
   const pathEl = $('#workspace-path')
+  const select = $<HTMLSelectElement>('#ws-select')
   const status = $('#ws-status')
   const newBtn = $('#ws-new')
   const newForm = $('#ws-new-form')
   const nameInput = $<HTMLInputElement>('#ws-new-name')
 
-  const showPath = async () => {
-    const p = await ws.path()
-    pathEl.textContent = shortenPath(p)
-    pathEl.title = p
+  const basename = (p: string) => p.split(/[/\\]/).filter(Boolean).pop() ?? p
+
+  /** Redraw the picker from whatever the main process says is current. */
+  const draw = (list: { current: string; recent: string[] }) => {
+    const paths = list.recent.includes(list.current) ? list.recent : [list.current, ...list.recent]
+    select.innerHTML = paths
+      .map((p) => `<option value="${p}"${p === list.current ? ' selected' : ''}>${basename(p)}</option>`)
+      .join('')
+    pathEl.textContent = list.current
+    pathEl.title = list.current
   }
-  await showPath()
+
+  draw(await ws.list())
+
+  /** A different folder means a different set of interfaces, so force a reload. */
+  const switchTo = async (list: { current: string; recent: string[] } | null) => {
+    if (!list) return
+    status.textContent = ''
+    draw(list)
+    await refreshApps(true)
+  }
+
+  select.addEventListener('change', async () => {
+    try {
+      await switchTo(await ws.use(select.value))
+    } catch (err) {
+      status.textContent = err instanceof Error ? err.message : 'could not open that folder'
+      draw(await ws.list())
+    }
+  })
+
+  const changeWorkspace = async () => switchTo(await ws.choose())
+
+  $('#ws-reveal').addEventListener('click', () => void ws.reveal())
+  $('#ws-change').addEventListener('click', () => void changeWorkspace())
+  window.planchette?.onChooseWorkspace(() => void changeWorkspace())
+
+  $('#ws-forget').addEventListener('click', async () => {
+    const list = await ws.list()
+    // Forgetting the folder you are standing in would leave the picker lying.
+    if (list.recent.length < 2) {
+      status.textContent = 'nothing else to fall back to'
+      return
+    }
+    draw(await ws.forget(list.current))
+    await switchTo(await ws.use((await ws.list()).recent[0]!))
+  })
 
   const closeForm = () => {
     newForm.hidden = true
@@ -215,29 +252,18 @@ async function setupWorkspace(): Promise<void> {
     const name = nameInput.value.trim()
     if (!name) return
     try {
-      const id = await ws.createApp(name)
+      const id = await ws.createInterface(name)
       prefs.app = id
       savePrefs()
       closeForm()
       await refreshApps(true)
+      // Open the folder so the designer lands on the files they can edit.
       await ws.reveal(id)
     } catch (err) {
-      status.textContent = err instanceof Error ? err.message : 'could not create that app'
+      status.textContent = err instanceof Error ? err.message : 'could not create that interface'
     }
   }
 
-  const changeWorkspace = async () => {
-    const picked = await ws.choose()
-    if (!picked) return
-    await showPath()
-    // A different folder means a different set of apps, so force a reload even
-    // if an app of the same name happens to exist in both.
-    await refreshApps(true)
-  }
-
-  $('#ws-reveal').addEventListener('click', () => void ws.reveal())
-  $('#ws-change').addEventListener('click', () => void changeWorkspace())
-  window.planchette?.onChooseWorkspace(() => void changeWorkspace())
   newBtn.addEventListener('click', () => {
     newForm.hidden = false
     newBtn.hidden = true
