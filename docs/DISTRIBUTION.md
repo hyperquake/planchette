@@ -43,9 +43,9 @@ map, theirs is merged and their mapping wins, since a document may only have one
 Both run `npm run prepackage` first, which builds the host bundle, the standalone
 SDK, the type declarations, and the workspace seed.
 
-`.github/workflows/build.yml` builds each platform on your self-hosted runners.
-Check the `runs-on` labels match how yours are registered; it assumes
-`[self-hosted, macOS]` and `[self-hosted, Windows]`.
+`.github/workflows/release.yml` builds and publishes both platforms on the
+org-level self-hosted runners. See `RUNNERS.md` for which machines those are and
+the one permission that has to be granted.
 
 ### One gotcha with npm 11 install scripts
 

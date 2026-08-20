@@ -1,0 +1,157 @@
+# Build and publish a Planchette release for macOS and Windows.
+#
+# Each platform is packaged natively on its own machine: cross-building a Windows
+# NSIS installer from macOS needs Wine, and cross-building a signed macOS bundle
+# from anywhere else is not possible. The two jobs are independent and each
+# publishes its own assets, so one platform failing does not block the other.
+#
+# Runners are the org-level pair, the same ones conflower-player uses:
+#   [self-hosted, macOS]    -> Brooklyn-Studio
+#   [self-hosted, Windows]  -> PROTO1-P8
+# The org runner group must grant this repository access.
+#
+# To ship:
+#   npm version 0.2.0 --no-git-tag-version
+#   git commit -am "Release v0.2.0" && git tag v0.2.0 && git push --follow-tags
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref to build (defaults to the triggering ref)'
+        required: false
+
+permissions:
+  contents: write
+
+# One release at a time: both jobs reuse a working directory on their machine.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  macos:
+    runs-on: [self-hosted, macOS]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      # electron-builder can produce the x64 build from an arm64 Mac but not the
+      # other way round, so fail early and clearly rather than silently shipping
+      # one architecture.
+      - name: Confirm Apple Silicon
+        run: |
+          set -euo pipefail
+          arch=$(uname -m)
+          if [ "$arch" != "arm64" ]; then
+            echo "::error::This runner is $arch. An arm64 Mac is needed to build both architectures."
+            exit 1
+          fi
+          echo "runner arch: $arch"
+
+      # A self-hosted runner keeps its working directory between runs, and the
+      # generated folders are gitignored, so checkout leaves them in place. Stale
+      # artifacts from an older version would otherwise be swept up by the
+      # release upload below.
+      - run: npm run clean
+
+      - run: npm ci
+
+      # electron-builder names every artifact from the package.json version, so a
+      # tag that disagrees produces a v0.2.0 release full of 0.1.0 files.
+      - name: Tag must match package.json
+        run: node scripts/check-version.mjs "${{ github.event.inputs.ref || github.ref_name }}"
+
+      - run: npm run check
+      - run: npm run prepackage
+
+      # Opens a real window, so it needs a logged-in desktop session. Advisory
+      # during a release on purpose: a display problem should not block shipping.
+      # ci.yml is where this gates.
+      - name: Smoke test
+        continue-on-error: true
+        run: npm run smoke
+
+      # Ad-hoc signs via scripts/adhoc-sign.cjs, which needs the Xcode command
+      # line tools. Without a valid signature an arm64 build will not launch at
+      # all, and macOS reports it as "damaged".
+      - run: npx electron-builder --mac
+
+      - name: Publish release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create "$GITHUB_REF_NAME" release/*.dmg release/*.zip \
+            --title "Planchette $GITHUB_REF_NAME" \
+            --notes-file docs/release-notes.md \
+            --verify-tag \
+          || gh release upload "$GITHUB_REF_NAME" release/*.dmg release/*.zip --clobber
+
+      - name: Upload workflow artifacts (non-tag runs)
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: |
+            release/*.dmg
+            release/*.zip
+          if-no-files-found: error
+
+  windows:
+    runs-on: [self-hosted, Windows]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - run: npm run clean
+      - run: npm ci
+
+      - name: Tag must match package.json
+        run: node scripts/check-version.mjs "${{ github.event.inputs.ref || github.ref_name }}"
+
+      - run: npm run check
+      - run: npm run prepackage
+
+      # A Windows runner registered as a service has no interactive desktop, and
+      # the smoke test cannot open a window without one.
+      - name: Smoke test
+        continue-on-error: true
+        run: npm run smoke
+
+      - run: npx electron-builder --win
+
+      - name: Publish release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $assets = Get-ChildItem release/*.exe | ForEach-Object { $_.FullName }
+          gh release create "$env:GITHUB_REF_NAME" $assets `
+            --title "Planchette $env:GITHUB_REF_NAME" `
+            --notes-file docs/release-notes.md `
+            --verify-tag
+          if ($LASTEXITCODE -ne 0) { gh release upload "$env:GITHUB_REF_NAME" $assets --clobber }
+
+      - name: Upload workflow artifacts (non-tag runs)
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: release/*.exe
+          if-no-files-found: error

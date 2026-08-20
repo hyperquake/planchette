@@ -1,0 +1,53 @@
+name: CI
+
+# Runs on the org-level self-hosted runners, the same pair conflower-player uses:
+#   [self-hosted, macOS]    -> Brooklyn-Studio
+#   [self-hosted, Windows]  -> PROTO1-P8
+# Packaging is deliberately not done here; see release.yml.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    runs-on: [self-hosted, macOS]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      # Self-hosted runners keep their working directory, and the generated
+      # folders are gitignored so checkout leaves them behind.
+      - run: npm run clean
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+      - run: npm run build:seed
+      # Opens a real window, so the runner needs a logged-in desktop session.
+      # Gating here: this is the job that proves the packaged shell still works.
+      - run: npm run smoke
+
+  windows:
+    runs-on: [self-hosted, Windows]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: npm run clean
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+      - run: npm run build:seed
+      # Advisory: a Windows runner registered as a service has no interactive
+      # desktop, and the smoke test cannot open a window without one. Drop
+      # continue-on-error if yours runs in a logged-in session.
+      - run: npm run smoke
+        continue-on-error: true
