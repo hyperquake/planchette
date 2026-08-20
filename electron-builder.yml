@@ -1,5 +1,5 @@
-appId: com.hyperquake.touch-table-sim
-productName: Touch Table Sim
+appId: com.hyperquake.planchette
+productName: Planchette
 directories:
   output: release
   buildResources: build

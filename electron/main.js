@@ -2,7 +2,7 @@
  * Electron main process.
  *
  * Two jobs. First, serve the host UI and the designer apps over a custom
- * `table://` scheme. Second, own the workspace: a folder on the user's disk that
+ * `planchette://` scheme. Second, own the workspace: a folder on the user's disk that
  * holds their apps, which they can edit with any editor while the app is running.
  *
  * Why a custom scheme rather than file:// or a localhost server:
@@ -10,7 +10,7 @@
  *  - A localhost server can trip the macOS firewall prompt on first launch,
  *    which is a bad first impression for something handed round a team.
  *
- * Host UI and apps deliberately share one origin (`table://host`), so an app's
+ * Host UI and apps deliberately share one origin (`planchette://host`), so an app's
  * URL is `/apps/<id>/index.html` in both the packaged app and the Vite dev
  * server. Nothing in the renderer has to know which one it is running under.
  */
@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const DIST = path.join(HERE, '..', 'dist')
-const SCHEME = 'table'
+const SCHEME = 'planchette'
 const ORIGIN = `${SCHEME}://host`
 
 /**
@@ -31,7 +31,7 @@ const ORIGIN = `${SCHEME}://host`
  * as an env var, because `FOO=bar cmd` is not portable to Windows shells.
  */
 const DEV_URL =
-  process.env.TABLE_SIM_DEV_URL ||
+  process.env.PLANCHETTE_DEV_URL ||
   process.argv.find((a) => a.startsWith('--dev-url='))?.slice('--dev-url='.length) ||
   null
 
@@ -61,7 +61,7 @@ function writeSettings(next) {
     fs.mkdirSync(path.dirname(settingsPath()), { recursive: true })
     fs.writeFileSync(settingsPath(), JSON.stringify(next, null, 2))
   } catch (err) {
-    console.error('[table-sim] could not save settings', err)
+    console.error('[planchette] could not save settings', err)
   }
 }
 
@@ -98,7 +98,7 @@ async function ensureWorkspace() {
 
   const seed = seedDir()
   if (!fs.existsSync(seed)) {
-    console.error(`[table-sim] no workspace seed at ${seed}; run npm run build:seed`)
+    console.error(`[planchette] no workspace seed at ${seed}; run npm run build:seed`)
     return
   }
   // Never clobber: a folder with no apps may still hold a designer's notes.
@@ -199,13 +199,13 @@ async function serveFile(file) {
  * development; the packaged app has no bundler, so it injects an import map.
  */
 const PROVIDED = {
-  '@table/sdk': '/sdk.js',
+  '@planchette/sdk': '/sdk.js',
   three: '/three.js',
 }
 const IMPORT_MAP = `<script type="importmap">${JSON.stringify({ imports: PROVIDED })}</script>`
 
 /**
- * Designer apps import bare specifiers such as `@table/sdk` and `three`. Vite
+ * Designer apps import bare specifiers such as `@planchette/sdk` and `three`. Vite
  * resolves those during development; browsers cannot, so we inject an import map.
  *
  * A document may only have one import map, so if the designer wrote their own we
@@ -291,7 +291,7 @@ function watchWorkspace(win) {
       }, 150)
     })
   } catch (err) {
-    console.error('[table-sim] could not watch the workspace', err)
+    console.error('[planchette] could not watch the workspace', err)
   }
 }
 
@@ -406,7 +406,7 @@ async function createWindow() {
     minWidth: 1100,
     minHeight: 700,
     backgroundColor: '#14161a',
-    title: 'Touch Table Sim',
+    title: 'Planchette',
     show: false,
     webPreferences: {
       preload: path.join(HERE, 'preload.cjs'),
@@ -446,9 +446,9 @@ app.whenReady().then(async () => {
   // disagree about which apps exist.
   workspace = DEV_URL
     ? path.join(HERE, '..', 'apps')
-    : process.env.TABLE_SIM_WORKSPACE ||
+    : process.env.PLANCHETTE_WORKSPACE ||
       readSettings().workspace ||
-      path.join(app.getPath('documents'), 'Touch Table Sim')
+      path.join(app.getPath('documents'), 'Planchette')
 
   await ensureWorkspace()
   registerProtocol()

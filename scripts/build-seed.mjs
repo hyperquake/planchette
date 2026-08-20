@@ -4,7 +4,7 @@
  *
  * A coworker who opens that folder in an editor or a coding agent should have
  * everything needed to write an interface: two examples, the design rules, and
- * SDK type declarations wired up so `@table/sdk` resolves.
+ * SDK type declarations wired up so `@planchette/sdk` resolves.
  */
 import fs from 'node:fs/promises'
 import path from 'node:path'
@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const out = path.join(root, 'workspace-seed')
-const EXAMPLES = ['_template', 'dial-demo']
+const EXAMPLES = ['_template', 'dial-demo', 'arcane-table']
 
 async function exists(p) {
   try {
@@ -52,7 +52,7 @@ await fs.writeFile(
         checkJs: false,
         noEmit: true,
         baseUrl: '.',
-        paths: { '@table/sdk': ['./types/index.d.ts'] },
+        paths: { '@planchette/sdk': ['./types/index.d.ts'] },
       },
       include: ['.'],
     },

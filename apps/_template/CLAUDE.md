@@ -13,7 +13,7 @@ than the API does.
 ## The shape of an app
 
 Two files. No build step, no framework, plain JS modules. `index.html` holds the
-markup and CSS, `main.js` imports `@table/sdk` and reacts to the table.
+markup and CSS, `main.js` imports `@planchette/sdk` and reacts to the table.
 
 Everything you draw is laid out at the table's real resolution (3840x2160 by
 default) and scaled down for preview, so one CSS pixel here is one real table

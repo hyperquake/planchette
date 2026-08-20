@@ -7,7 +7,7 @@ installing Node, and **still author interfaces**. That second half is why the
 app does not simply bake `apps/` into the bundle.
 
 Instead there is a **workspace**: a normal folder on disk, by default
-`~/Documents/Touch Table Sim` (Windows: `Documents\Touch Table Sim`). On first
+`~/Documents/Planchette` (Windows: `Documents\Planchette`). On first
 run the app seeds it with two example apps, SDK type declarations, a
 `jsconfig.json`, and a `CLAUDE.md` carrying the design rules. A coworker can open
 that folder in any editor or coding agent and start working.
@@ -19,17 +19,17 @@ puck arrangement survives, so the loop is: arrange pucks once, then edit freely.
 
 | Piece                    | Role                                                            |
 | ------------------------ | --------------------------------------------------------------- |
-| `electron/main.js`       | Serves everything over `table://`, owns the workspace and watcher. |
+| `electron/main.js`       | Serves everything over `planchette://`, owns the workspace and watcher. |
 | `electron/preload.cjs`   | The whole renderer-to-disk surface. Nothing else crosses.       |
 | `src/host/appsource.ts`  | Hides whether apps come from Vite or from the workspace.         |
 | `scripts/build-seed.mjs` | Assembles `workspace-seed/`, what a fresh workspace gets.        |
 | `scripts/adhoc-sign.cjs` | Ad-hoc signs the macOS app so it will launch.                    |
 
-Host UI and designer apps share one origin, `table://host`, so an app's URL is
+Host UI and designer apps share one origin, `planchette://host`, so an app's URL is
 `/apps/<id>/index.html` in both the packaged app and the dev server. That is what
 keeps the renderer free of environment checks.
 
-Designer apps import `@table/sdk`, a bare specifier no browser can resolve. Vite
+Designer apps import `@planchette/sdk`, a bare specifier no browser can resolve. Vite
 handles it in development; the packaged app injects an import map into each
 served `index.html` pointing at `/sdk.js`. If a designer wrote their own import
 map, theirs is merged and their mapping wins, since a document may only have one.
@@ -73,7 +73,7 @@ no runtime dependencies at all.
 Launches the real shell against a throwaway workspace and drives the renderer
 over the Chrome DevTools Protocol, checking the things that only break once
 packaged: workspace seeding, the preload bridge, `/sdk.js` being served with a
-JavaScript MIME type, the injected import map actually resolving `@table/sdk`,
+JavaScript MIME type, the injected import map actually resolving `@planchette/sdk`,
 path traversal out of the workspace being refused, the file watcher reloading the
 app, and pucks surviving that reload.
 
@@ -99,7 +99,7 @@ front, because the macOS wording implies the file is corrupt.
 **macOS.** Right-click the app and choose **Open**, then confirm. Once per
 machine. If it still refuses, or was delivered as a zip through Slack:
 
-    xattr -cr "/Applications/Touch Table Sim.app"
+    xattr -cr "/Applications/Planchette.app"
 
 **Windows.** SmartScreen shows "Windows protected your PC". Click **More info**,
 then **Run anyway**. Also once per machine.

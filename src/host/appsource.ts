@@ -41,7 +41,7 @@ export interface AppSource {
 
 declare global {
   interface Window {
-    tableSim?: DesktopBridge
+    planchette?: DesktopBridge
   }
 }
 
@@ -81,4 +81,4 @@ function desktopSource(bridge: DesktopBridge): AppSource {
   }
 }
 
-export const appSource: AppSource = window.tableSim ? desktopSource(window.tableSim) : webSource()
+export const appSource: AppSource = window.planchette ? desktopSource(window.planchette) : webSource()

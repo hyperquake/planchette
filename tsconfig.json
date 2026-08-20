@@ -11,7 +11,7 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "types": ["vite/client", "node"],
-    "paths": { "@table/sdk": ["./src/sdk/index.ts"] }
+    "paths": { "@planchette/sdk": ["./src/sdk/index.ts"] }
   },
   "include": ["src", "vite.config.ts"]
 }

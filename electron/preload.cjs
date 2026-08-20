@@ -5,7 +5,7 @@
  */
 const { contextBridge, ipcRenderer } = require('electron')
 
-contextBridge.exposeInMainWorld('tableSim', {
+contextBridge.exposeInMainWorld('planchette', {
   listApps: () => ipcRenderer.invoke('apps:list'),
   workspacePath: () => ipcRenderer.invoke('workspace:path'),
   chooseWorkspace: () => ipcRenderer.invoke('workspace:choose'),

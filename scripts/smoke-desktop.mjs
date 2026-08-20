@@ -13,7 +13,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 const PORT = 9333
-const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'table-sim-smoke-'))
+const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'planchette-smoke-'))
 
 const results = []
 const check = (name, ok, detail = '') => {
@@ -24,7 +24,7 @@ const check = (name, ok, detail = '') => {
 const electron = spawn(
   process.platform === 'win32' ? 'npx.cmd' : 'npx',
   ['electron', '.', `--remote-debugging-port=${PORT}`],
-  { env: { ...process.env, TABLE_SIM_WORKSPACE: workspace }, stdio: ['ignore', 'pipe', 'pipe'] },
+  { env: { ...process.env, PLANCHETTE_WORKSPACE: workspace }, stdio: ['ignore', 'pipe', 'pipe'] },
 )
 
 let stderr = ''
@@ -37,7 +37,7 @@ async function findTarget() {
   for (let i = 0; i < 60; i++) {
     try {
       const list = await fetch(`http://127.0.0.1:${PORT}/json/list`).then((r) => r.json())
-      const page = list.find((t) => t.type === 'page' && String(t.url).startsWith('table://host/'))
+      const page = list.find((t) => t.type === 'page' && String(t.url).startsWith('planchette://host/'))
       if (page?.webSocketDebuggerUrl) return page
     } catch {
       /* not listening yet */
@@ -98,7 +98,7 @@ try {
   check('workspace seeded on first run', seeded.includes('dial-demo') && seeded.includes('CLAUDE.md'), seeded.sort().join(', '))
 
   // The preload bridge is reachable and reports what it found on disk.
-  const bridge = await evaluate('return { version: window.tableSim?.version, apps: await window.tableSim?.listApps(), ws: await window.tableSim?.workspacePath() }')
+  const bridge = await evaluate('return { version: window.planchette?.version, apps: await window.planchette?.listApps(), ws: await window.planchette?.workspacePath() }')
   check('preload bridge exposed', Boolean(bridge?.version), `electron ${bridge?.version}`)
   check('apps listed from workspace', Array.isArray(bridge?.apps) && bridge.apps.includes('dial-demo'), JSON.stringify(bridge?.apps))
   check('workspace path is the temp dir', bridge?.ws === workspace)
@@ -108,7 +108,7 @@ try {
   check('/sdk.js served as JavaScript', sdk?.status === 200 && sdk.type === 'text/javascript' && sdk.hasExport, `${sdk?.status} ${sdk?.type}`)
 
   // App HTML gets an import map so the bare specifier resolves.
-  const html = await evaluate("const r = await fetch('/apps/dial-demo/index.html'); const t = await r.text(); return { status: r.status, importmap: t.includes('importmap'), mapped: t.includes('@table/sdk') }")
+  const html = await evaluate("const r = await fetch('/apps/dial-demo/index.html'); const t = await r.text(); return { status: r.status, importmap: t.includes('importmap'), mapped: t.includes('@planchette/sdk') }")
   check('import map injected into app HTML', html?.status === 200 && html.importmap && html.mapped)
 
   // Path traversal out of the workspace is refused.
@@ -133,7 +133,7 @@ try {
   const connected = await evaluate("return document.getElementById('appframe').getAttribute('src')")
   check('app iframe pointed at the workspace app', connected === '/apps/dial-demo/index.html', String(connected))
 
-  // The load-bearing check: the app imports the bare specifier '@table/sdk',
+  // The load-bearing check: the app imports the bare specifier '@planchette/sdk',
   // which only resolves if the injected import map worked. If it did, the app
   // handshook with the host and drew a dial for the puck placed above.
   const rendered = await evaluate(`
@@ -143,7 +143,7 @@ try {
     }
     return { dials: doc.querySelectorAll('.dial').length, status: doc.getElementById('status')?.textContent ?? '' };
   `)
-  check('app resolved @table/sdk and rendered', rendered?.dials === 1, `dials=${rendered?.dials}`)
+  check('app resolved @planchette/sdk and rendered', rendered?.dials === 1, `dials=${rendered?.dials}`)
   check('app received surface config', String(rendered?.status).includes('px/mm'), rendered?.status)
 
   // Editing a file in the workspace must reload the app iframe.

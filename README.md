@@ -1,4 +1,4 @@
-# Touch Table Sim
+# Planchette
 
 A simulator for a large multitouch table that also tracks **pucks**: physical
 objects placed on the surface, each reporting its own identity, position, and
@@ -48,7 +48,7 @@ is where most debugging happens.
 Pull state for anything that draws, push events for discrete moments.
 
 ```js
-import { table } from '@table/sdk'
+import { table } from '@planchette/sdk'
 
 table.ready(({ surface }) => {
   requestAnimationFrame(function loop() {
@@ -110,7 +110,7 @@ and what a first-time user has to click past.
 | Path                    | What it is                                                        |
 | ----------------------- | ----------------------------------------------------------------- |
 | `src/host/`             | The simulator: surface geometry, state model, input, inspector, app hosting. |
-| `src/sdk/`              | `@table/sdk`, the only module an interface imports.                |
+| `src/sdk/`              | `@planchette/sdk`, the only module an interface imports.                |
 | `apps/<id>/`            | Example interfaces. Seeded into a fresh workspace.                |
 | `electron/`             | The desktop shell: custom protocol, workspace, file watching.      |
 | `scripts/`              | Workspace seed assembly, ad-hoc signing, the smoke test.           |

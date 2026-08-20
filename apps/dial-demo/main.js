@@ -21,7 +21,7 @@
  *    own, because several people are using this at once.
  */
 
-import { table } from '@table/sdk'
+import { table } from '@planchette/sdk'
 
 const OPTIONS = ['Terrain', 'Traffic', 'Weather', 'Transit', 'Parks', 'Zoning', 'Labels', 'Satellite']
 const STEP = (Math.PI * 2) / OPTIONS.length

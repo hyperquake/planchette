@@ -7,7 +7,7 @@ const root = dirname(fileURLToPath(import.meta.url))
 /**
  * Bundles Three.js into dist/three.js so the packaged app can offer `three` as a
  * bare specifier through the injected import map, the same way it offers
- * `@table/sdk`. Minified, unlike the SDK: nobody reads vendor code.
+ * `@planchette/sdk`. Minified, unlike the SDK: nobody reads vendor code.
  */
 export default defineConfig({
   build: {

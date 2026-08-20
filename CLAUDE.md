@@ -19,7 +19,7 @@ Four parts, and the boundaries between them are load-bearing:
   wire types live here in `types.ts` and the host imports them from the SDK, not
   the other way round.
 - **`apps/<id>/`** are example interfaces, served as static files.
-- **`electron/`** is a shell: a custom `table://` protocol, a workspace folder on
+- **`electron/`** is a shell: a custom `planchette://` protocol, a workspace folder on
   disk, and a file watcher. It adds distribution, not behaviour.
 
 Host and interface communicate **only** over `postMessage`. That is the seam that
@@ -37,7 +37,7 @@ is wrong.
    reason the simulator is trustworthy about size.
 2. **`appSource.urlFor()` returns the same path in both environments**, so the
    packaged app serves the host UI and interfaces from one origin
-   (`table://host`). Do not give interfaces their own origin without a reason:
+   (`planchette://host`). Do not give interfaces their own origin without a reason:
    same-origin is what keeps the renderer free of environment checks.
 3. **The SDK folds each event into its cached state before dispatching it.** A
    handler calling `table.state()` or `nearestPuck()` must see a table that
@@ -61,7 +61,7 @@ is wrong.
 
 ## Bare specifiers
 
-Interfaces import `@table/sdk` and `three`. Those resolve two different ways, and
+Interfaces import `@planchette/sdk` and `three`. Those resolve two different ways, and
 **both have to be updated together**:
 
 | Environment  | Mechanism                                                        |

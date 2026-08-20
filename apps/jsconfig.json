@@ -8,7 +8,7 @@
     "checkJs": false,
     "noEmit": true,
     "baseUrl": ".",
-    "paths": { "@table/sdk": ["../src/sdk/index.ts"] }
+    "paths": { "@planchette/sdk": ["../src/sdk/index.ts"] }
   },
   "include": ["."]
 }

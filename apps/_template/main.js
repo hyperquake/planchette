@@ -1,4 +1,4 @@
-import { table } from '@table/sdk'
+import { table } from '@planchette/sdk'
 
 const hint = document.getElementById('hint')
 const rings = new Map() // puck id -> element

@@ -8,7 +8,7 @@ const root = dirname(fileURLToPath(import.meta.url))
  * A standalone ESM build of the SDK, emitted into dist/ alongside the host UI.
  *
  * The packaged app serves this at /sdk.js and injects an import map so that a
- * designer app's `import { table } from '@table/sdk'` resolves without a
+ * designer app's `import { table } from '@planchette/sdk'` resolves without a
  * bundler. Left unminified on purpose: designers do read it.
  */
 export default defineConfig({

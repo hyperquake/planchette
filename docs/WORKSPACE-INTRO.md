@@ -1,6 +1,6 @@
 # Your table interfaces
 
-This folder is your workspace for **Touch Table Sim**, a simulator for a
+This folder is your workspace for **Planchette**, a simulator for a
 multitouch table with tangible pucks. Each subfolder here is one interface.
 
 The table you are designing for is real hardware you probably do not have on your

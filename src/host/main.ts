@@ -32,7 +32,7 @@ interface Prefs {
   zoom: number
 }
 
-const PREFS_KEY = 'table-sim/prefs'
+const PREFS_KEY = 'planchette/prefs'
 
 function loadPrefs(): Prefs {
   const fallback: Prefs = { app: '', surface: PRESETS[0]!.id, zoomMode: 'fit', zoom: 1 }
@@ -66,7 +66,7 @@ const savePrefs = () => localStorage.setItem(PREFS_KEY, JSON.stringify(prefs))
  * reload really is a re-acquisition, exactly like the tracker losing and
  * refinding a marker.
  */
-const TABLE_KEY = 'table-sim/table'
+const TABLE_KEY = 'planchette/table'
 const PERSIST_INTERVAL_MS = 500
 
 interface SavedPuck {
@@ -178,7 +178,7 @@ appSource.onChange((appId) => {
   if (!appId || appId === frame.currentApp) frame.reload()
 })
 
-window.tableSim?.onReloadApp(() => frame.reload())
+window.planchette?.onReloadApp(() => frame.reload())
 
 /* ---------------- workspace (desktop build only) ---------------- */
 
@@ -237,7 +237,7 @@ async function setupWorkspace(): Promise<void> {
 
   $('#ws-reveal').addEventListener('click', () => void ws.reveal())
   $('#ws-change').addEventListener('click', () => void changeWorkspace())
-  window.tableSim?.onChooseWorkspace(() => void changeWorkspace())
+  window.planchette?.onChooseWorkspace(() => void changeWorkspace())
   newBtn.addEventListener('click', () => {
     newForm.hidden = false
     newBtn.hidden = true
@@ -327,4 +327,4 @@ void (async () => {
   await setupWorkspace()
 })()
 
-console.info('[table-sim] window.sim is available. Try: sim.addPuck({ markerId: 3, mmX: 600, mmY: 340 })')
+console.info('[planchette] window.sim is available. Try: sim.addPuck({ markerId: 3, mmX: 600, mmY: 340 })')

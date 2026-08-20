@@ -8,7 +8,7 @@ in a workspace folder opened from the packaged app. It is the shared contract.
 Pull state for anything that draws, push events for discrete moments.
 
 ```js
-import { table } from '@table/sdk'
+import { table } from '@planchette/sdk'
 
 table.ready(({ surface }) => {
   requestAnimationFrame(function loop() {

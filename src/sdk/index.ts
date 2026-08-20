@@ -1,5 +1,5 @@
 /**
- * @table/sdk
+ * @planchette/sdk
  *
  * The one module a designer app imports. It gives you the state of the table
  * two ways:

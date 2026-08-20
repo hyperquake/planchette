@@ -20,7 +20,7 @@
  */
 
 import * as THREE from 'three'
-import { table } from '@table/sdk'
+import { table } from '@planchette/sdk'
 import { Bloom } from './lib/bloom.js'
 import { Ribbon } from './lib/ribbon.js'
 import { makeRune } from './lib/runes.js'

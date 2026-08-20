@@ -24,8 +24,8 @@ function entries(): Record<string, string> {
 
 export default defineConfig({
   resolve: {
-    // Designer apps import from '@table/sdk' rather than a relative path.
-    alias: { '@table/sdk': resolve(root, 'src/sdk/index.ts') },
+    // Designer apps import from '@planchette/sdk' rather than a relative path.
+    alias: { '@planchette/sdk': resolve(root, 'src/sdk/index.ts') },
   },
   build: {
     target: 'es2022',
