@@ -1,0 +1,45 @@
+/* A local stylesheet, referenced by index.html the way any static site would. */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #05060b; }
+body {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #b9c6e6;
+  user-select: none;
+}
+
+#gl { position: absolute; inset: 0; display: block; }
+
+/* DOM on top of WebGL: cheaper and sharper than rendering text in the scene. */
+#overlay { position: absolute; inset: 0; pointer-events: none; }
+
+#title {
+  position: absolute;
+  left: calc(14 * var(--mm));
+  top: calc(11 * var(--mm));
+  font-size: calc(7 * var(--mm));
+  letter-spacing: calc(1.6 * var(--mm));
+  color: #6f7fa8;
+  text-transform: uppercase;
+}
+
+#status {
+  position: absolute;
+  left: calc(14 * var(--mm));
+  bottom: calc(9 * var(--mm));
+  font-size: calc(3.6 * var(--mm));
+  color: #4b5878;
+}
+
+#hint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  font-size: calc(6 * var(--mm));
+  line-height: 1.7;
+  color: #5d6a8e;
+  transition: opacity .6s ease;
+}
+#hint b { color: #9db3e0; font-weight: 500; }

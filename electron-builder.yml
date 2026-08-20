@@ -1,0 +1,50 @@
+appId: com.hyperquake.touch-table-sim
+productName: Touch Table Sim
+directories:
+  output: release
+  buildResources: build
+
+# The renderer bundle, the SDK bundle, and the shell. Nothing else is needed:
+# the app has no runtime dependencies.
+files:
+  - dist/**/*
+  - electron/**/*
+  - package.json
+
+# Copied into a designer's workspace on first run, so it must stay outside asar.
+extraResources:
+  - from: workspace-seed
+    to: workspace-seed
+
+asar: true
+
+# Ad-hoc signs the .app. Not for Gatekeeper's benefit, which needs a real
+# Developer ID, but because macOS refuses to launch an arm64 binary whose
+# signature was invalidated by repackaging.
+afterPack: scripts/adhoc-sign.cjs
+
+mac:
+  category: public.app-category.design
+  darkModeSupport: true
+  identity: null
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+
+dmg:
+  title: ${productName}
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  artifactName: ${productName}-${version}-setup.${ext}

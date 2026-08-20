@@ -1,0 +1,34 @@
+{
+  "name": "touch-table-sim",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Simulator for a multitouch table with tangible pucks, plus an SDK for designer-authored HTML interfaces.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build --config vite.sdk.config.ts && vite build --config vite.vendor.config.ts",
+    "build:types": "tsc -p tsconfig.sdk.json",
+    "build:seed": "npm run build:types && node scripts/build-seed.mjs",
+    "preview": "vite preview",
+    "check": "tsc --noEmit",
+    "electron:dev": "electron . --dev-url=http://localhost:5173",
+    "prepackage": "npm run build && npm run build:seed",
+    "dist": "npm run prepackage && electron-builder",
+    "dist:mac": "npm run prepackage && electron-builder --mac",
+    "dist:win": "npm run prepackage && electron-builder --win",
+    "smoke": "node scripts/smoke-desktop.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "@types/three": "^0.185.4",
+    "electron": "^43.4.1",
+    "electron-builder": "^26.15.3",
+    "three": "^0.185.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
+  },
+  "main": "electron/main.js",
+  "allowScripts": {
+    "electron@43.4.1": true
+  }
+}

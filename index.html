@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Touch Table Simulator</title>
+<style>
+  :root {
+    --bg: #14161a; --panel: #1b1e24; --line: #2b3038; --ink: #d8dde5;
+    --dim: #8b94a3; --accent: #4da3ff; --puck: #f0913b; --touch: #4dd6a8;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 13px/1.4 system-ui, -apple-system, sans-serif;
+  }
+  #app { display: grid; grid-template-columns: 1fr 350px; grid-template-rows: auto 1fr; height: 100vh; }
+
+  /* ---- topbar ---- */
+  #topbar {
+    grid-column: 1 / -1; display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .brand { font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: 11px; color: var(--dim); }
+  #topbar label { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--dim); }
+  .sep { width: 1px; height: 20px; background: var(--line); }
+  select, input, button {
+    font: inherit; font-size: 12px; color: var(--ink); background: #23272f;
+    border: 1px solid var(--line); border-radius: 5px; padding: 4px 8px;
+  }
+  input[type=number] { width: 58px; }
+  button { cursor: pointer; }
+  button:hover { border-color: #3d4450; background: #2a2f38; }
+  button.on { background: var(--accent); border-color: var(--accent); color: #06111f; font-weight: 600; }
+  #zoom-readout { font-family: var(--mono); font-size: 11px; color: var(--dim); min-width: 42px; }
+
+  /* ---- stage ---- */
+  #stage { overflow: auto; padding: 16px; display: flex; }
+  /* margin:auto centres the surface while keeping both edges reachable when zoomed in */
+  #sizer { position: relative; margin: auto; flex: none; }
+  #surface {
+    position: absolute; top: 0; left: 0; transform-origin: top left;
+    background: #0a0b0d; box-shadow: 0 0 0 1px var(--line), 0 20px 60px rgba(0,0,0,.5);
+    touch-action: none; cursor: crosshair; overflow: hidden;
+  }
+  #appframe { position: absolute; top: 0; left: 0; border: 0; display: block; background: #000; }
+  #overlay { position: absolute; inset: 0; }
+  #surface.pass-mouse #overlay { pointer-events: none; }
+
+  .puck {
+    position: absolute; top: 0; left: 0; border-radius: 50%;
+    border: calc(2px / var(--inv-fit, 1) * 1) solid rgba(255,255,255,.5);
+    background: color-mix(in srgb, var(--puck) 26%, transparent);
+    cursor: grab; touch-action: none;
+  }
+  .puck:active { cursor: grabbing; }
+  .puck-north {
+    position: absolute; left: 50%; top: 5%; width: 6%; height: 30%;
+    background: #fff; border-radius: 999px; transform: translateX(-50%);
+  }
+  .puck-label {
+    position: absolute; left: 50%; top: 50%; font-family: var(--mono); font-size: 13px;
+    color: #fff; text-shadow: 0 1px 3px #000; font-weight: 700;
+    transform: translate(-50%, -50%) rotate(calc(-1 * var(--a))) scale(var(--inv-fit, 1));
+  }
+  .touch {
+    position: absolute; top: 0; left: 0; border-radius: 50%; pointer-events: none;
+    background: color-mix(in srgb, var(--touch) 45%, transparent);
+    box-shadow: 0 0 0 1px var(--touch);
+  }
+  .touch.sticky {
+    pointer-events: auto; cursor: grab;
+    background: color-mix(in srgb, var(--touch) 20%, transparent);
+    box-shadow: 0 0 0 calc(2px * var(--inv-fit, 1)) var(--touch);
+  }
+
+  /* ---- inspector ---- */
+  #inspector {
+    background: var(--panel); border-left: 1px solid var(--line);
+    overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 14px;
+  }
+  #inspector h2 {
+    font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--dim); margin: 0 0 6px; font-weight: 600;
+  }
+  .kv { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; padding: 2px 0; }
+  .kv span { color: var(--dim); }
+  .kv b { font-family: var(--mono); font-weight: 500; }
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; }
+  th { text-align: left; color: var(--dim); font-weight: 500; padding: 2px 4px; border-bottom: 1px solid var(--line); }
+  td { padding: 2px 4px; border-bottom: 1px solid #22262d; }
+  td.hi { color: var(--accent); }
+  tr.empty td { color: #5a6170; text-align: center; padding: 8px; font-style: italic; }
+  #log {
+    height: 220px; overflow-y: auto; background: #101215; border: 1px solid var(--line);
+    border-radius: 5px; padding: 4px; font-family: var(--mono); font-size: 10.5px; white-space: pre;
+  }
+  .log-row { padding: 1px 2px; }
+  .log-row.log-puck { color: var(--puck); }
+  .log-row.log-touch { color: var(--touch); }
+  .log-tools { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+  .log-tools input[type=text] { flex: 1; min-width: 0; }
+  .log-tools label { font-size: 11px; color: var(--dim); display: flex; align-items: center; gap: 3px; }
+  .ws-row { display: flex; gap: 5px; margin-top: 6px; }
+  .ws-row button { flex: 1; white-space: nowrap; }
+  .ws-row input { flex: 1; min-width: 0; }
+  #workspace-path { max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #ws-status:not(:empty) { margin-top: 6px; font-size: 11px; color: #e08b6a; }
+  .keys { font-size: 11px; color: var(--dim); line-height: 1.7; }
+  .keys kbd {
+    font-family: var(--mono); font-size: 10px; background: #23272f; border: 1px solid var(--line);
+    border-bottom-width: 2px; border-radius: 3px; padding: 0 4px; color: var(--ink);
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <span class="brand">Table Sim</span>
+    <label>App <select id="app-select"></select></label>
+    <button id="reload" title="Reload the app iframe">Reload</button>
+    <span class="sep"></span>
+    <label>Surface <select id="surface-select"></select></label>
+    <span class="sep"></span>
+    <label>Zoom
+      <button id="zoom-fit">Fit</button>
+      <button id="zoom-1" title="One table pixel per CSS pixel">1:1</button>
+      <span id="zoom-readout"></span>
+    </label>
+    <span class="sep"></span>
+    <label>Marker <input id="marker-id" type="number" value="1" min="1" max="999"></label>
+    <button id="add-puck">Add puck</button>
+    <button id="pinch-mode" title="Drag creates a symmetric pair of contacts">Pinch pair</button>
+    <button id="pass-mouse" title="Let the mouse reach the app directly, for debugging">Pass mouse</button>
+    <button id="clear">Clear</button>
+  </header>
+
+  <main id="stage">
+    <div id="sizer">
+      <div id="surface">
+        <iframe id="appframe" title="designer app"></iframe>
+        <div id="overlay"></div>
+      </div>
+    </div>
+  </main>
+
+  <aside id="inspector">
+    <section id="workspace-section" hidden>
+      <h2>Workspace</h2>
+      <div class="kv"><span>folder</span><b id="workspace-path"></b></div>
+      <div class="ws-row">
+        <button id="ws-reveal" title="Show this folder in the file manager">Open folder</button>
+        <button id="ws-change">Change&hellip;</button>
+        <button id="ws-new">New app&hellip;</button>
+      </div>
+      <div class="ws-row" id="ws-new-form" hidden>
+        <input id="ws-new-name" type="text" placeholder="my-interface">
+        <button id="ws-new-create">Create</button>
+        <button id="ws-new-cancel">Cancel</button>
+      </div>
+      <div id="ws-status"></div>
+    </section>
+    <section>
+      <h2>Surface</h2>
+      <div id="surface-readout"></div>
+    </section>
+    <section>
+      <h2>Pucks</h2>
+      <table>
+        <thead><tr><th>id</th><th>mkr</th><th>mmX</th><th>mmY</th><th>angle</th><th>speed</th></tr></thead>
+        <tbody id="puck-rows"></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Contacts</h2>
+      <table>
+        <thead><tr><th>id</th><th>mmX</th><th>mmY</th><th>r</th><th>edge</th></tr></thead>
+        <tbody id="touch-rows"></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Events sent to app</h2>
+      <div class="log-tools">
+        <input id="log-filter" type="text" placeholder="filter">
+        <label><input id="log-pause" type="checkbox"> pause</label>
+        <button id="log-clear">clear</button>
+      </div>
+      <div id="log"></div>
+    </section>
+    <section>
+      <h2>Input</h2>
+      <div class="keys">
+        <b>Pucks.</b> Drag to move. <kbd>right-drag</kbd> or <kbd>wheel</kbd> over a puck rotates it,
+        <kbd>[</kbd> <kbd>]</kbd> nudge 5&deg;. <kbd>P</kbd> drops a puck at the cursor,
+        <kbd>&#9003;</kbd> removes one. Drag a puck off the edge to lift it off the table.<br>
+        <b>Contacts.</b> Drag empty space for a contact that lasts while the button is down.
+        <kbd>1</kbd>&hellip;<kbd>9</kbd> pin a lasting contact at the cursor, press again to lift it.
+        <kbd>esc</kbd> clears all contacts. A real touchscreen gives you true simultaneous fingers.<br>
+        <b>Pinch pair</b> makes a drag emit two contacts; <kbd>wheel</kbd> changes the spread,
+        <kbd>shift</kbd>+<kbd>wheel</kbd> rotates the pair.
+      </div>
+    </section>
+  </aside>
+</div>
+<script type="module" src="/src/host/main.ts"></script>
+</body>
+</html>

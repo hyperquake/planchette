@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Puck dial</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+  body {
+    background: radial-gradient(circle at 50% 40%, #1a2030 0%, #0c0e13 70%);
+    color: #e6ebf2; font-family: system-ui, -apple-system, sans-serif;
+    user-select: none;
+  }
+
+  /* Every size below is stated in millimetres, because that is what the person
+     standing at the table actually experiences. --mm is set by the SDK. */
+
+  #hint {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    text-align: center; color: #58627a; font-size: calc(7 * var(--mm));
+    line-height: 1.6; transition: opacity .3s;
+  }
+  #hint b { color: #8b96ad; }
+
+  #status {
+    position: absolute; left: calc(10 * var(--mm)); bottom: calc(8 * var(--mm));
+    font-size: calc(3.5 * var(--mm)); color: #4c5568;
+    font-family: ui-monospace, monospace;
+  }
+
+  .dial {
+    position: absolute; left: 0; top: 0;
+    transition: opacity .5s ease-out;
+  }
+
+  /* The puck and the hand holding it sit here, so nothing meaningful may be
+     drawn inside. The dashed circle just makes the rule visible. */
+  .footprint {
+    position: absolute; width: var(--puck-d); height: var(--puck-d);
+    margin: calc(var(--puck-d) / -2);
+    border: calc(.6 * var(--mm)) dashed #39425a;
+    border-radius: 50%;
+  }
+
+  .opt {
+    position: absolute; left: 0; top: 0;
+    width: calc(30 * var(--mm)); height: calc(20 * var(--mm));
+    margin: calc(-10 * var(--mm)) 0 0 calc(-15 * var(--mm));
+    display: grid; place-items: center;
+    border-radius: calc(3 * var(--mm));
+    background: rgba(120, 134, 166, .12);
+    border: calc(.5 * var(--mm)) solid rgba(140, 155, 190, .25);
+    font-size: calc(4.6 * var(--mm)); color: #97a3bb;
+    transition: background .12s, color .12s, border-color .12s;
+  }
+  .opt.sel {
+    background: #4da3ff; border-color: #7bbcff; color: #06121f; font-weight: 600;
+  }
+  .opt.done {
+    background: #3ddba0; border-color: #7ceec4; color: #04231a; font-weight: 600;
+  }
+
+  /* A bar whose bottom edge sits on the puck centre, so rotating it about
+     50% 100% sweeps the ring. Height and offset are set from JS, because the
+     ring radius is a constant in main.js. The gradient fades the inner half
+     out, keeping the puck footprint clear. */
+  .needle {
+    position: absolute; left: 0; top: 0;
+    width: calc(1.6 * var(--mm));
+    margin-left: calc(-.8 * var(--mm));
+    background: linear-gradient(to top, transparent 50%, #4da3ff);
+    transform-origin: 50% 100%;
+    border-radius: 999px;
+  }
+
+  .readout {
+    position: absolute; left: 0; top: 0;
+    padding: calc(3 * var(--mm)) calc(6 * var(--mm));
+    margin: calc(-6 * var(--mm)) 0 0 calc(-30 * var(--mm));
+    width: calc(60 * var(--mm)); box-sizing: border-box;
+    text-align: center; border-radius: calc(2.5 * var(--mm));
+    background: rgba(8, 12, 20, .85);
+    font-size: calc(4.2 * var(--mm)); color: #9fb0cc;
+    font-family: ui-monospace, monospace;
+  }
+  .readout b { color: #3ddba0; }
+</style>
+</head>
+<body>
+  <div id="hint">
+    Drop a puck on the table.<br>
+    <b>Rotate it</b> to move through the options, then <b>touch the ring</b> to confirm.<br>
+    Add a second puck: each one gets its own independent dial.
+  </div>
+  <div id="status"></div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
