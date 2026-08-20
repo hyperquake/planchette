@@ -46,8 +46,7 @@ jobs:
       - run: npm run check
       - run: npm run build
       - run: npm run build:seed
-      # Advisory: a Windows runner registered as a service has no interactive
-      # desktop, and the smoke test cannot open a window without one. Drop
-      # continue-on-error if yours runs in a logged-in session.
+      # Gating: PROTO1-P8 runs in a logged-in session, and this passed there on
+      # the first run. If the runner is ever re-registered as a Windows service
+      # it will lose its interactive desktop and this needs continue-on-error.
       - run: npm run smoke
-        continue-on-error: true
