@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const out = path.join(root, 'workspace-seed')
-const EXAMPLES = ['_template', 'dial-demo', 'arcane-table']
+const EXAMPLES = ['_template', 'dial-demo', 'radial-atlas', 'arcane-table']
 
 async function exists(p) {
   try {

@@ -65,8 +65,11 @@ decide whether an interface survives contact with the real table.
   of the object. The tradeoff is that two pucks carrying the same marker collapse
   onto one thing; if you hand out duplicate markers, key by `id` and use
   `markerId` plus last-known position to re-associate after a dropout.
-- **Do not read state that only your render loop computes.** Event handlers run
-  between frames. Derive from `table.state()` on demand instead of caching.
+- **Never let an event handler depend on your render loop.** This bites in two
+  ways, and both fail intermittently, which is the worst way to fail. Do not read
+  a value the loop computed (derive it from `table.state()` on demand instead),
+  and do not assume the loop has already created whatever object the handler
+  wants to touch. Create it on demand in the handler too.
 
 ## Driving the simulator
 

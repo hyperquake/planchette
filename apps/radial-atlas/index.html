@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Radial Atlas</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <!-- The shared centre of the table. Several people drive it at once; the rule
+       is last selection wins, and the stage says who changed it. -->
+  <div id="stage">
+    <figure id="plate">
+      <img id="plate-img" alt="">
+      <figcaption>
+        <h1 id="plate-title"></h1>
+        <p id="plate-body"></p>
+        <div id="plate-meta"></div>
+      </figcaption>
+    </figure>
+    <div id="stage-empty">
+      <b>Radial Atlas</b>
+      Place a puck, rotate to sweep the ring, touch the ring to open a collection.<br>
+      Touch the outer ring to load a plate. Touch the puck itself to go back.
+    </div>
+  </div>
+
+  <!-- Menus are drawn above the content, one per puck. -->
+  <div id="menus"></div>
+  <div id="status"></div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

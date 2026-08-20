@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" width="900" height="700">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="hsl(320 42% 17%)"/>
+      <stop offset="1" stop-color="hsl(0 48% 8%)"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.62">
+      <stop offset="0" stop-color="hsl(320 78% 62% / 0.30)"/>
+      <stop offset="1" stop-color="hsl(320 78% 62% / 0)"/>
+    </radialGradient>
+  </defs>
+  <rect width="900" height="700" fill="url(#bg)"/>
+  <g>
+    <path d="M0 90 C 225 62.32543724279836, 450 117.67456275720164, 675 62.32543724279836 S 900 117.67456275720164, 900 90" fill="none" stroke="hsl(320 70% 78% / 0.5)" stroke-width="6"/>
+    <path d="M0 152 C 225 115.44994855967079, 450 188.5500514403292, 675 115.44994855967079 S 900 188.5500514403292, 900 152" fill="none" stroke="hsl(320 60% 85% / 0.28)" stroke-width="3"/>
+    <path d="M0 214 C 225 168.57445987654322, 450 259.4255401234568, 675 168.57445987654322 S 900 259.4255401234568, 900 214" fill="none" stroke="hsl(320 70% 78% / 0.5)" stroke-width="6"/>
+    <path d="M0 276 C 225 221.69897119341564, 450 330.3010288065844, 675 221.69897119341564 S 900 330.3010288065844, 900 276" fill="none" stroke="hsl(320 60% 85% / 0.28)" stroke-width="3"/>
+    <path d="M0 338 C 225 274.82348251028804, 450 401.17651748971196, 675 274.82348251028804 S 900 401.17651748971196, 900 338" fill="none" stroke="hsl(320 70% 78% / 0.5)" stroke-width="6"/>
+    <path d="M0 400 C 225 369.9479938271605, 450 430.0520061728395, 675 369.9479938271605 S 900 430.0520061728395, 900 400" fill="none" stroke="hsl(320 60% 85% / 0.28)" stroke-width="3"/>
+    <path d="M0 462 C 225 423.0725051440329, 450 500.9274948559671, 675 423.0725051440329 S 900 500.9274948559671, 900 462" fill="none" stroke="hsl(320 70% 78% / 0.5)" stroke-width="6"/>
+    <path d="M0 524 C 225 476.19701646090533, 450 571.8029835390946, 675 476.19701646090533 S 900 571.8029835390946, 900 524" fill="none" stroke="hsl(320 60% 85% / 0.28)" stroke-width="3"/>
+    <path d="M0 586 C 225 529.3215277777778, 450 642.6784722222222, 675 529.3215277777778 S 900 642.6784722222222, 900 586" fill="none" stroke="hsl(320 70% 78% / 0.5)" stroke-width="6"/>
+  </g>
+  <rect width="900" height="700" fill="url(#glow)"/>
+  <text x="42" y="646" font-family="ui-monospace, monospace" font-size="30" fill="hsl(320 40% 82% / 0.85)" letter-spacing="4">CADENCE</text>
+  <text x="42" y="682" font-family="ui-monospace, monospace" font-size="19" fill="hsl(320 30% 70% / 0.55)" letter-spacing="3">MOTION / PLATE 1</text>
+</svg>

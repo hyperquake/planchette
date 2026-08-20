@@ -1,0 +1,164 @@
+/* Sizes are in millimetres via --mm, published by the SDK. On a 55 inch 4K
+   surface one millimetre is 3.15 pixels, so nothing here is stated in pixels. */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+body {
+  background: radial-gradient(circle at 50% 42%, #1619226 0%, #0a0c11 70%);
+  background-color: #0a0c11;
+  color: #d5dceb;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  user-select: none;
+}
+
+/* ---------- the shared content stage ---------- */
+
+#stage {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(360 * var(--mm));
+  height: calc(250 * var(--mm));
+  display: grid;
+  place-items: center;
+}
+
+#plate {
+  margin: 0;
+  display: none;
+  grid-template-columns: auto 1fr;
+  gap: calc(14 * var(--mm));
+  align-items: center;
+  width: 100%;
+  animation: rise .45s cubic-bezier(.2, .8, .2, 1);
+}
+#plate.shown { display: grid; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(calc(6 * var(--mm))); }
+  to   { opacity: 1; transform: none; }
+}
+
+#plate-img {
+  display: block;
+  width: calc(190 * var(--mm));
+  height: calc(148 * var(--mm));
+  object-fit: cover;
+  border-radius: calc(3 * var(--mm));
+  box-shadow: 0 calc(4 * var(--mm)) calc(18 * var(--mm)) #0009;
+}
+
+#plate figcaption { max-width: calc(150 * var(--mm)); }
+#plate h1 {
+  margin: 0 0 calc(5 * var(--mm));
+  font-size: calc(13 * var(--mm));
+  font-weight: 500;
+  letter-spacing: calc(.3 * var(--mm));
+  color: #eef3ff;
+}
+#plate p {
+  margin: 0;
+  font-size: calc(5.2 * var(--mm));
+  line-height: 1.65;
+  color: #93a0bb;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+#plate-meta {
+  margin-top: calc(7 * var(--mm));
+  font-size: calc(3.6 * var(--mm));
+  color: #5c6884;
+  letter-spacing: calc(.4 * var(--mm));
+}
+
+#stage-empty {
+  text-align: center;
+  font-size: calc(5.4 * var(--mm));
+  line-height: 1.8;
+  color: #5b657e;
+}
+#stage-empty b {
+  display: block;
+  font-size: calc(11 * var(--mm));
+  color: #8e9bb8;
+  letter-spacing: calc(1.4 * var(--mm));
+  margin-bottom: calc(6 * var(--mm));
+  text-transform: uppercase;
+}
+
+/* ---------- radial menus ---------- */
+
+#menus { position: absolute; inset: 0; }
+.menu { position: absolute; left: 0; top: 0; transition: opacity .4s; }
+
+/* Nothing readable goes inside the footprint: a hand is there. It is the
+   back target, so it is marked but empty. */
+.hub {
+  position: absolute;
+  width: calc(60 * var(--mm)); height: calc(60 * var(--mm));
+  margin: calc(-30 * var(--mm)) 0 0 calc(-30 * var(--mm));
+  border: calc(.6 * var(--mm)) dashed #3c455e;
+  border-radius: 50%;
+}
+
+.pointer {
+  position: absolute;
+  width: calc(1.4 * var(--mm));
+  margin-left: calc(-.7 * var(--mm));
+  bottom: 0;
+  background: linear-gradient(to top, transparent 22%, #6fa8ff);
+  transform-origin: 50% 100%;
+  border-radius: 999px;
+}
+
+.ring-line {
+  position: absolute;
+  border: calc(.5 * var(--mm)) solid #ffffff14;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.cell {
+  position: absolute; left: 0; top: 0;
+  width: calc(42 * var(--mm));
+  height: calc(17 * var(--mm));
+  display: grid;
+  place-items: center;
+  border-radius: calc(2.4 * var(--mm));
+  background: #7d8cae1f;
+  border: calc(.5 * var(--mm)) solid #8b9bc02e;
+  font-size: calc(4.6 * var(--mm));
+  color: #9fadc9;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.cell.dim { opacity: .5; }
+.cell.on {
+  background: #6fa8ff;
+  border-color: #a9cfff;
+  color: #06121f;
+  font-weight: 600;
+}
+.cell.chosen {
+  background: #6fa8ff33;
+  border-color: #6fa8ff8c;
+  color: #cfe2ff;
+  opacity: 1;
+}
+
+.crumb {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(34 * var(--mm));
+  font-size: calc(3.6 * var(--mm));
+  color: #6a7692;
+  letter-spacing: calc(.4 * var(--mm));
+  white-space: nowrap;
+}
+
+#status {
+  position: absolute;
+  left: calc(12 * var(--mm));
+  bottom: calc(8 * var(--mm));
+  font-size: calc(3.4 * var(--mm));
+  color: #46506a;
+}

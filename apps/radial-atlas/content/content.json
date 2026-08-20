@@ -1,0 +1,155 @@
+{
+  "title": "Radial Atlas",
+  "collections": [
+    {
+      "id": "structure",
+      "label": "Structure",
+      "blurb": "How load finds the ground.",
+      "plates": [
+        {
+          "id": "structure-1",
+          "title": "Lattice",
+          "body": "A repeating cell carries force outward rather than down, so the whole surface shares the work. Depth reads as pattern before it reads as strength.",
+          "image": "./content/images/structure-1.svg"
+        },
+        {
+          "id": "structure-2",
+          "title": "Cantilever",
+          "body": "Mass held out past its support. The drama is entirely in what you cannot see: the counterweight buried behind the wall.",
+          "image": "./content/images/structure-2.svg"
+        },
+        {
+          "id": "structure-3",
+          "title": "Truss",
+          "body": "Triangles refuse to deform. Everything above is a consequence of that one fact.",
+          "image": "./content/images/structure-3.svg"
+        }
+      ]
+    },
+    {
+      "id": "light",
+      "label": "Light",
+      "blurb": "What the surface does with it.",
+      "plates": [
+        {
+          "id": "light-1",
+          "title": "Caustic",
+          "body": "Curved water focuses light into moving lines on the floor beneath. The pattern is a lens, not a texture.",
+          "image": "./content/images/light-1.svg"
+        },
+        {
+          "id": "light-2",
+          "title": "Penumbra",
+          "body": "The soft edge where a shadow is only partly blocked. Its width tells you how large the source was.",
+          "image": "./content/images/light-2.svg"
+        },
+        {
+          "id": "light-3",
+          "title": "Refraction",
+          "body": "A change of speed at a boundary bends the path. Every lens is an argument about where the image should land.",
+          "image": "./content/images/light-3.svg"
+        }
+      ]
+    },
+    {
+      "id": "motion",
+      "label": "Motion",
+      "blurb": "Change measured against time.",
+      "plates": [
+        {
+          "id": "motion-1",
+          "title": "Cadence",
+          "body": "Repetition with a stress pattern. The interval matters more than the event.",
+          "image": "./content/images/motion-1.svg"
+        },
+        {
+          "id": "motion-2",
+          "title": "Drift",
+          "body": "Slow displacement with no obvious force behind it. Legible only by comparison with where things were.",
+          "image": "./content/images/motion-2.svg"
+        },
+        {
+          "id": "motion-3",
+          "title": "Impulse",
+          "body": "All of the force delivered in almost none of the time. The shape of the response outlives the cause.",
+          "image": "./content/images/motion-3.svg"
+        }
+      ]
+    },
+    {
+      "id": "material",
+      "label": "Material",
+      "blurb": "Surfaces that record their history.",
+      "plates": [
+        {
+          "id": "material-1",
+          "title": "Patina",
+          "body": "Oxidation as a finish rather than a failure. The colour is a record of exposure.",
+          "image": "./content/images/material-1.svg"
+        },
+        {
+          "id": "material-2",
+          "title": "Grain",
+          "body": "Direction inherited from growth. Cut across it and the material behaves like a different substance.",
+          "image": "./content/images/material-2.svg"
+        },
+        {
+          "id": "material-3",
+          "title": "Sinter",
+          "body": "Particles fused below their melting point. Strength arrives without ever becoming liquid.",
+          "image": "./content/images/material-3.svg"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "label": "Pattern",
+      "blurb": "Rules that fill a plane.",
+      "plates": [
+        {
+          "id": "pattern-1",
+          "title": "Tessellation",
+          "body": "Shapes that tile without gap or overlap. There are only seventeen ways to repeat symmetrically on a plane.",
+          "image": "./content/images/pattern-1.svg"
+        },
+        {
+          "id": "pattern-2",
+          "title": "Moire",
+          "body": "Two regular grids at a slight angle produce a third pattern belonging to neither.",
+          "image": "./content/images/pattern-2.svg"
+        },
+        {
+          "id": "pattern-3",
+          "title": "Voronoi",
+          "body": "Every point belongs to its nearest seed. Cell walls are simply the places that cannot decide.",
+          "image": "./content/images/pattern-3.svg"
+        }
+      ]
+    },
+    {
+      "id": "scale",
+      "label": "Scale",
+      "blurb": "The same thing at three sizes.",
+      "plates": [
+        {
+          "id": "scale-1",
+          "title": "Macro",
+          "body": "Close enough that surface becomes structure and the object loses its outline.",
+          "image": "./content/images/scale-1.svg"
+        },
+        {
+          "id": "scale-2",
+          "title": "Human",
+          "body": "Sized against reach, stride, and eye height. The only scale that feels like nothing at all.",
+          "image": "./content/images/scale-2.svg"
+        },
+        {
+          "id": "scale-3",
+          "title": "Territory",
+          "body": "Large enough that it can only be inferred, never seen. Maps are the interface.",
+          "image": "./content/images/scale-3.svg"
+        }
+      ]
+    }
+  ]
+}

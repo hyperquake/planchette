@@ -85,7 +85,14 @@ the data model and wire protocol.
 | --------------------- | -------------------------------------------------------------------------------- |
 | `apps/_template/`     | The smallest thing that works. Copy this to start.                               |
 | `apps/dial-demo/`     | A puck as a rotary dial. DOM and CSS transforms, millimetre geometry, per-puck state for several users at once. |
+| `apps/radial-atlas/`  | Multi-level radial menus, and loading real content: a local `content.json` plus image files on disk. |
 | `apps/arcane-table/`  | A Three.js showcase: bloom, a flowing particle field, procedural runes, and electrical arcs between pucks. |
+
+![Nested radial menus loading plate content](docs/images/radial-atlas.jpg)
+
+An interface folder is an ordinary static site. It can reference any local
+script, stylesheet, image, font, model, or shader at any depth, and remote
+`https` URLs as well, including ES module imports from a CDN.
 
 ![The Three.js showcase](docs/images/arcane-table.jpg)
 
