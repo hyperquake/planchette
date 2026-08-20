@@ -16,7 +16,7 @@
  * between the two.
  */
 
-import { app, BrowserWindow, dialog, ipcMain, Menu, protocol, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, protocol, shell } from 'electron'
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
@@ -441,6 +441,34 @@ function registerIpc(win) {
  * Window and menu
  * ------------------------------------------------------------------ */
 
+let cachedDevIcon
+
+/**
+ * An icon for unpackaged runs only.
+ *
+ * A packaged build takes its icon from the bundle, which is authoritative and
+ * already correct. Running `npm run electron:dev` there is no bundle, so Electron
+ * shows its own stock icon in the dock and the taskbar.
+ *
+ * Uses build/icon.png, the full-bleed 512 fallback, as-is. Nothing here resizes
+ * or regenerates anything: the multi-size .icns and .ico each carry two distinct
+ * pieces of artwork and must not be rebuilt from a single PNG.
+ *
+ * build/ is not in the packaged `files` list, which is exactly why this is
+ * guarded on isPackaged rather than just letting the read fail.
+ */
+function devIcon() {
+  if (cachedDevIcon !== undefined) return cachedDevIcon
+  if (app.isPackaged) {
+    cachedDevIcon = null
+    return cachedDevIcon
+  }
+  const image = nativeImage.createFromPath(path.join(HERE, '..', 'build', 'icon.png'))
+  cachedDevIcon = image.isEmpty() ? null : image
+  if (!cachedDevIcon) console.warn('[planchette] build/icon.png missing or unreadable; using the stock icon')
+  return cachedDevIcon
+}
+
 function buildMenu(win) {
   const isMac = process.platform === 'darwin'
   const template = [
@@ -491,7 +519,11 @@ function buildMenu(win) {
 }
 
 async function createWindow() {
+  const icon = devIcon()
   const win = new BrowserWindow({
+    // Ignored on macOS, which uses the bundle or the dock icon set below. This
+    // is what gives Windows and Linux a real window and taskbar icon in dev.
+    ...(icon ? { icon } : {}),
     width: 1600,
     height: 1000,
     minWidth: 1100,
@@ -544,6 +576,12 @@ app.whenReady().then(async () => {
   await ensureWorkspace()
   if (!DEV_URL) rememberWorkspace(workspace)
   registerProtocol()
+
+  // macOS reads the dock icon from the bundle, which an unpackaged run has not
+  // got, so set it explicitly. Once, not per window.
+  const icon = devIcon()
+  if (icon && process.platform === 'darwin' && app.dock) app.dock.setIcon(icon)
+
   await createWindow()
 
   app.on('activate', async () => {

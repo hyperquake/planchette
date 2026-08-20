@@ -82,6 +82,24 @@ It opens a window, so it needs an interactive desktop session. In CI it gates th
 macOS job and is advisory on Windows, since self-hosted Windows runners often run
 as a service with no desktop.
 
+## Icons
+
+`build/icon.icns` and `build/icon.ico` are discovered by filename because
+`buildResources: build` is set. **Do not** add a `mac.icon`, `win.icon`, or
+top-level `icon:` key; adding one is how this breaks. Do not rebuild them from a
+single PNG either: each carries two pieces of artwork, a solid lens below 48px
+and a lens knocked out with a ring above, which closes into mush at small sizes.
+
+`public/favicon.svg` and `public/favicon.ico` are served from the root under both
+Vite and `planchette://host`, so their paths must stay root-absolute. The smoke
+test asserts both come back with the right MIME type, which is the part that can
+break silently once packaged.
+
+Unpackaged runs have no bundle to take an icon from, so `electron/main.js` points
+the dock and the window at `build/icon.png` when `app.isPackaged` is false. That
+guard is load-bearing: `build/` is deliberately not in the packaged `files` list,
+so a packaged build must never try to read it.
+
 ## Developing the shell
 
     npm run dev            # terminal 1: Vite
@@ -118,9 +136,6 @@ Nothing here needs rework.
 
 ## Still to do
 
-- **A dock icon in development.** `npm run electron:dev` shows the stock Electron
-  icon, because `BrowserWindow` is not given an `icon` option. Only packaged
-  builds carry the real one.
 - **Auto-update.** Not wired. Coworkers get new builds by downloading them. If
   that becomes annoying, `electron-updater` plus a release feed is the usual next
   step, and it needs real signing on macOS to be worth it.
