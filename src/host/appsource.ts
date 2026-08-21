@@ -27,6 +27,7 @@ export interface DesktopBridge {
   chooseWorkspace(): Promise<WorkspaceList | null>
   reveal(appId?: string): Promise<void>
   createInterface(name: string): Promise<string>
+  describeMenu(): Promise<unknown>
   onAppsChanged(cb: (appId: string | null) => void): void
   onReloadApp(cb: () => void): void
   onChooseWorkspace(cb: () => void): void

@@ -464,6 +464,26 @@ function slugify(name) {
 
 function registerIpc(win) {
   ipcMain.handle('apps:list', () => listApps())
+
+  /**
+   * Read-only description of the built menu.
+   *
+   * The menu template is platform branched, and since Settings and the inspector
+   * are only reachable from it, a menu that is wrong on one platform makes the app
+   * unusable there. Exposing it lets the smoke test assert on both, which matters
+   * because Windows is tested by CI rather than by eye.
+   */
+  ipcMain.handle('menu:describe', () => {
+    const describe = (items) =>
+      items.map((item) => ({
+        label: item.label || null,
+        accelerator: item.accelerator || null,
+        type: item.type,
+        submenu: item.submenu ? describe(item.submenu.items) : null,
+      }))
+    const menu = Menu.getApplicationMenu()
+    return menu ? describe(menu.items) : null
+  })
   ipcMain.handle('workspace:path', () => workspace)
   ipcMain.handle('workspace:list', () => ({ current: workspace, recent: reachableWorkspaces() }))
 

@@ -27,6 +27,10 @@ on:
 permissions:
   contents: write
 
+env:
+  # The tag being released, whether this was a tag push or a manual re-run.
+  TAG: ${{ github.event.inputs.ref || github.ref_name }}
+
 # One release at a time: both jobs reuse a working directory on their machine.
 concurrency:
   group: release
@@ -68,7 +72,7 @@ jobs:
       # electron-builder names every artifact from the package.json version, so a
       # tag that disagrees produces a v0.2.0 release full of 0.1.0 files.
       - name: Tag must match package.json
-        run: node scripts/check-version.mjs "${{ github.event.inputs.ref || github.ref_name }}"
+        run: node scripts/check-version.mjs "${{ env.TAG }}"
 
       - run: npm run check
       - run: npm run prepackage
@@ -94,28 +98,27 @@ jobs:
       # A javascript action rather than the gh cli, for the same reason as the
       # windows job: it needs nothing but the runner's own node.
       - name: Publish release assets
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(env.TAG, 'v')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Planchette ${{ github.ref_name }}
+          tag_name: ${{ env.TAG }}
+          name: Planchette ${{ env.TAG }}
           body_path: docs/release-notes.md
           draft: true
           files: |
             release/*.dmg
-            release/*.zip
+            release/planchette-web-*.zip
           fail_on_unmatched_files: true
 
       - name: Upload workflow artifacts (non-tag runs)
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ !startsWith(env.TAG, 'v') }}
         uses: actions/upload-artifact@v4
         with:
           name: macos
           path: |
             release/*.dmg
-            release/*.zip
+            release/planchette-web-*.zip
           if-no-files-found: error
-          # release/*.zip is both the mac zips and planchette-web-<version>.zip.
 
   windows:
     runs-on: [self-hosted, Windows]
@@ -132,7 +135,7 @@ jobs:
       - run: npm ci
 
       - name: Tag must match package.json
-        run: node scripts/check-version.mjs "${{ github.event.inputs.ref || github.ref_name }}"
+        run: node scripts/check-version.mjs "${{ env.TAG }}"
 
       - run: npm run check
       - run: npm run prepackage
@@ -150,18 +153,18 @@ jobs:
       # runner, and assuming a cli exists on a hand-provisioned machine is how the
       # first release attempt failed. This needs nothing but the runner's own node.
       - name: Publish release assets
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(env.TAG, 'v')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Planchette ${{ github.ref_name }}
+          tag_name: ${{ env.TAG }}
+          name: Planchette ${{ env.TAG }}
           body_path: docs/release-notes.md
           draft: true
           files: release/*.exe
           fail_on_unmatched_files: true
 
       - name: Upload workflow artifacts (non-tag runs)
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ !startsWith(env.TAG, 'v') }}
         uses: actions/upload-artifact@v4
         with:
           name: windows

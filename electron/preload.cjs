@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('planchette', {
   chooseWorkspace: () => ipcRenderer.invoke('workspace:choose'),
   reveal: (appId) => ipcRenderer.invoke('workspace:reveal', appId),
   createInterface: (name) => ipcRenderer.invoke('interface:create', name),
+  describeMenu: () => ipcRenderer.invoke('menu:describe'),
 
   onAppsChanged: (cb) => ipcRenderer.on('apps:changed', (_e, appId) => cb(appId)),
   onReloadApp: (cb) => ipcRenderer.on('app:reload', () => cb()),

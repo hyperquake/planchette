@@ -269,6 +269,39 @@ try {
   const wsList = await evaluate('return await window.planchette.listWorkspaces()')
   check('workspace list reports the current folder', wsList?.current === workspace && Array.isArray(wsList?.recent))
 
+  // The menus are the only way to reach settings and the inspector, and the
+  // template is platform branched, so a menu that is wrong on Windows makes the
+  // app unusable there. Windows is tested by CI rather than by eye, so assert it.
+  const menu = await evaluate('return await window.planchette.describeMenu()')
+  const flat = []
+  const walk = (items, trail) => {
+    for (const item of items ?? []) {
+      if (item.label) flat.push({ path: [...trail, item.label].join(' > '), label: item.label, accelerator: item.accelerator })
+      if (item.submenu) walk(item.submenu, item.label ? [...trail, item.label] : trail)
+    }
+  }
+  walk(menu, [])
+  const find = (label) => flat.find((i) => i.label === label)
+
+  check('menu built at all', Array.isArray(menu) && flat.length > 0, `${flat.length} labelled items`)
+  for (const [label, accel] of [
+    ['Settings…', 'CmdOrCtrl+,'],
+    ['Toggle Inspector', 'CmdOrCtrl+I'],
+    ['New Interface…', 'CmdOrCtrl+N'],
+    ['Open Workspace Folder', 'CmdOrCtrl+Shift+O'],
+  ]) {
+    const item = find(label)
+    check(`menu has ${label}`, Boolean(item) && item.accelerator === accel, item ? `${item.path}  ${item.accelerator}` : 'missing')
+  }
+  // Placement differs by platform, and getting it wrong is the likely mistake.
+  const settings = find('Settings…')
+  const expectedParent = process.platform === 'darwin' ? 'Planchette' : 'File'
+  check(
+    `Settings sits under ${expectedParent} on ${process.platform}`,
+    String(settings?.path ?? '').startsWith(expectedParent),
+    settings?.path,
+  )
+
   // And the puck arrangement survives that reload, which is the whole point.
   const survived = await evaluate(`
     const doc = document.getElementById('appframe').contentDocument;
