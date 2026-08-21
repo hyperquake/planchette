@@ -16,15 +16,25 @@ is how conflower-player ended up with a separate pair.
 
 The first CI run proved most of this rather than assuming it:
 
-- The Windows job was picked up by `PROTO1-P8` immediately and **every step
-  passed**, including `npm ci` (so the pinned `allowScripts` approval for
-  Electron's binary download works in CI), all three Vite builds, the workspace
-  seed, and the full 23-check smoke test against a real Electron window.
+- The Windows job is picked up by `PROTO1-P8` immediately, and `npm ci`,
+  `npm run check`, `npm run build` and `npm run build:seed` all pass. That
+  confirms the pinned `allowScripts` approval for Electron's binary download
+  works in CI, which was the main unknown.
 - Repository access through the org runner group is therefore already granted.
   Nothing needed adding.
-- The macOS job sat unassigned. Labels and group access are both fine, proven by
-  Windows working from the same group; `Brooklyn-Studio` is simply **offline**.
-  Its last job in any repo was 2026-08-12.
+- The macOS job sits unassigned across two separate runs. Labels and group access
+  are both fine, proven by Windows working from the same group, so
+  `Brooklyn-Studio` is **offline**. Its last job in any repo was 2026-08-12.
+
+**Correction.** An earlier version of this file claimed the Windows smoke test
+passed on the first run. It did not. `continue-on-error: true` reports a failed
+step's conclusion as `success`, and that was read as a pass. The smoke test had
+been failing on Windows from the first run with `spawn EINVAL`, because Node 20.12
+and later refuse to spawn a `.cmd` file without `shell: true` and the script
+launched Electron through `npx.cmd`. It now resolves the Electron binary directly.
+
+Whether `PROTO1-P8` has an interactive desktop is therefore **still unverified**:
+the smoke test never got as far as opening a window.
 
 ## The one thing that has to be true
 
@@ -60,10 +70,11 @@ Both already build other projects, so most of this is present.
 
 **Windows** (`PROTO1-P8`)
 - Node 24, same as above.
-- It runs in a logged-in session, so `npm run smoke` works: the first CI run on
-  this machine passed all 23 checks, Electron window and all. It is therefore
-  gating in `ci.yml`. If the runner is ever re-registered as a Windows service it
-  loses its interactive desktop and that step needs `continue-on-error`.
+- `npm run smoke` opens a real Electron window, so it needs a logged-in desktop
+  session. It is gating in `ci.yml` so that a failure is visible rather than
+  masked. If it turns out this runner is registered as a service, and so has no
+  interactive desktop, that step needs `continue-on-error` and the reason should
+  be recorded here rather than left to be rediscovered.
 
 Neither machine needs Wine, a Developer ID, or any signing setup. Electron's
 ~100MB binary download is cached per machine (`~/Library/Caches/electron`,

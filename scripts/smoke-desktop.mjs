@@ -9,6 +9,7 @@
  */
 import { spawn } from 'node:child_process'
 import fs from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -21,11 +22,17 @@ const check = (name, ok, detail = '') => {
   console.log(`${ok ? '  ok  ' : ' FAIL '} ${name}${detail ? `  ${detail}` : ''}`)
 }
 
-const electron = spawn(
-  process.platform === 'win32' ? 'npx.cmd' : 'npx',
-  ['electron', '.', `--remote-debugging-port=${PORT}`],
-  { env: { ...process.env, PLANCHETTE_WORKSPACE: workspace }, stdio: ['ignore', 'pipe', 'pipe'] },
-)
+// Resolve the Electron binary directly rather than going through npx. Node 20.12
+// and later refuse to spawn a .cmd file without shell: true, so `npx.cmd` throws
+// EINVAL on Windows, and enabling a shell just to work around that would mean
+// quoting the workspace path by hand. The electron package exports its
+// executable path, which sidesteps both problems.
+const electronBinary = createRequire(import.meta.url)('electron')
+
+const electron = spawn(electronBinary, ['.', `--remote-debugging-port=${PORT}`], {
+  env: { ...process.env, PLANCHETTE_WORKSPACE: workspace },
+  stdio: ['ignore', 'pipe', 'pipe'],
+})
 
 let stderr = ''
 electron.stderr.on('data', (d) => (stderr += d))
