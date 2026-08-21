@@ -126,6 +126,8 @@
   .ws-row button { flex: 1; white-space: nowrap; }
   .ws-row input { flex: 1; min-width: 0; }
   #ws-select { width: 100%; min-width: 0; }
+  .ws-name { font-size: 12px; color: var(--ink); }
+  .ws-name[hidden] { display: none; }
   .ws-path {
     margin-top: 5px; font-family: var(--mono); font-size: 10px; color: #6b7385;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left;
@@ -208,8 +210,12 @@
   <aside id="inspector">
     <section id="workspace-section" hidden>
       <h2>Workspace</h2>
-      <div class="ws-row">
-        <select id="ws-select" title="Recent workspaces"></select>
+      <!-- A select is only shown once there is a choice to make. With one
+           workspace it is a dropdown of one, which looks like a control and does
+           nothing, so the name is plain text instead. -->
+      <div class="ws-name" id="ws-name"></div>
+      <div class="ws-row" id="ws-select-row" hidden>
+        <select id="ws-select" title="Switch workspace"></select>
       </div>
       <div class="ws-path" id="workspace-path"></div>
       <!-- Revealed by File > New interface. The verbs live in the menu; this is

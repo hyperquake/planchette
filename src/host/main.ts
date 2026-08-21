@@ -262,6 +262,8 @@ async function setupWorkspace(): Promise<void> {
   $('#workspace-section').hidden = false
   const pathEl = $('#workspace-path')
   const select = $<HTMLSelectElement>('#ws-select')
+  const selectRow = $('#ws-select-row')
+  const nameEl = $('#ws-name')
   const status = $('#ws-status')
   const newForm = $('#ws-new-form')
   const nameInput = $<HTMLInputElement>('#ws-new-name')
@@ -271,6 +273,14 @@ async function setupWorkspace(): Promise<void> {
   /** Redraw the picker from whatever the main process says is current. */
   const draw = (list: { current: string; recent: string[] }) => {
     const paths = list.recent.includes(list.current) ? list.recent : [list.current, ...list.recent]
+
+    // Only offer a switcher once there is something to switch to. A select with a
+    // single option reads as a control that does nothing.
+    const many = paths.length > 1
+    selectRow.hidden = !many
+    nameEl.hidden = many
+
+    nameEl.textContent = basename(list.current)
     select.innerHTML = paths
       .map((p) => `<option value="${p}"${p === list.current ? ' selected' : ''}>${basename(p)}</option>`)
       .join('')
