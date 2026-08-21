@@ -15,6 +15,12 @@ import path from 'node:path'
 
 const PORT = 9333
 const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'planchette-smoke-'))
+/**
+ * Its own userData directory. Without this the test shares the real app's
+ * settings.json and localStorage, and a run leaves its throwaway workspace in the
+ * user's recent list and clobbers their chosen interface.
+ */
+const userData = await fs.mkdtemp(path.join(os.tmpdir(), 'planchette-udata-'))
 
 const results = []
 const check = (name, ok, detail = '') => {
@@ -29,10 +35,11 @@ const check = (name, ok, detail = '') => {
 // executable path, which sidesteps both problems.
 const electronBinary = createRequire(import.meta.url)('electron')
 
-const electron = spawn(electronBinary, ['.', `--remote-debugging-port=${PORT}`], {
-  env: { ...process.env, PLANCHETTE_WORKSPACE: workspace },
-  stdio: ['ignore', 'pipe', 'pipe'],
-})
+const electron = spawn(
+  electronBinary,
+  ['.', `--remote-debugging-port=${PORT}`, `--user-data-dir=${userData}`],
+  { env: { ...process.env, PLANCHETTE_WORKSPACE: workspace }, stdio: ['ignore', 'pipe', 'pipe'] },
+)
 
 let stderr = ''
 electron.stderr.on('data', (d) => (stderr += d))
@@ -100,6 +107,26 @@ try {
   await connect(target.webSocketDebuggerUrl)
   await send('Runtime.enable', {})
 
+  // userData is a fresh directory per run, so there is nothing persisted to
+  // inherit. Wait for the first interface to settle before asserting anything.
+  for (let i = 0; i < 80; i++) {
+    const ready = await evaluate(
+      "return Boolean(window.sim && document.getElementById('appframe') && document.readyState === 'complete')",
+    ).catch(() => false)
+    if (ready) break
+    await sleep(250)
+  }
+  // And wait for the default interface to be loaded in the frame, not merely
+  // pointed at: the src attribute changes before the document is ready.
+  await evaluate(`
+    const f = document.getElementById('appframe');
+    for (let i = 0; i < 80; i++) {
+      if (String(f.getAttribute('src')).includes('dial-demo') && f.contentDocument?.readyState === 'complete') break;
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return 1;
+  `)
+
   // The workspace was seeded from the bundle.
   const seeded = await fs.readdir(workspace)
   check('workspace seeded on first run', seeded.includes('dial-demo') && seeded.includes('CLAUDE.md'), seeded.sort().join(', '))
@@ -147,7 +174,13 @@ try {
   check('sim.apps reflects the workspace', Array.isArray(sim?.apps) && sim.apps.includes('dial-demo'))
 
   const connected = await evaluate("return document.getElementById('appframe').getAttribute('src')")
-  check('interface iframe pointed at the workspace', connected === '/workspace/dial-demo/index.html', String(connected))
+  // endsWith, not equality: a relative-base build serves ./workspace/... and both
+  // resolve to the same place.
+  check(
+    'interface iframe pointed at the workspace',
+    String(connected).endsWith('workspace/dial-demo/index.html'),
+    String(connected),
+  )
 
   // The load-bearing check: the app imports the bare specifier '@planchette/sdk',
   // which only resolves if the injected import map worked. If it did, the app
@@ -218,6 +251,7 @@ try {
   await sleep(400)
   electron.kill('SIGKILL')
   await fs.rm(workspace, { recursive: true, force: true })
+  await fs.rm(userData, { recursive: true, force: true })
 }
 
 const failed = results.filter((r) => !r.ok)

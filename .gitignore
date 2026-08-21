@@ -4,3 +4,4 @@ dist
 release/
 dist-types/
 workspace-seed/
+dist-embed-test/

@@ -28,6 +28,14 @@ const SCHEME = 'planchette'
 const ORIGIN = `${SCHEME}://host`
 
 /**
+ * A workspace supplied from outside, for tests and for pointing a run at a
+ * throwaway folder. Deliberately never written to settings: an override is not a
+ * choice the user made, and persisting it means a test run silently changes which
+ * folder the real app opens next time. That is exactly what happened.
+ */
+const WORKSPACE_OVERRIDE = process.env.PLANCHETTE_WORKSPACE || null
+
+/**
  * Loading the Vite dev server instead of the bundle. Accepted as a flag as well
  * as an env var, because `FOO=bar cmd` is not portable to Windows shells.
  */
@@ -76,6 +84,21 @@ function recentWorkspaces() {
   return Array.isArray(saved) ? saved.filter((p) => typeof p === 'string') : []
 }
 
+/**
+ * The subset worth showing. Storage keeps everything, so a folder on a volume
+ * that happens to be unmounted comes back when it returns, but the picker never
+ * offers a path that is not there.
+ */
+function reachableWorkspaces() {
+  return recentWorkspaces().filter((p) => {
+    try {
+      return fs.statSync(p).isDirectory()
+    } catch {
+      return false
+    }
+  })
+}
+
 /** Record a workspace as current and move it to the front of the recent list. */
 function rememberWorkspace(dir) {
   const recent = [dir, ...recentWorkspaces().filter((p) => p !== dir)].slice(0, MAX_RECENT)
@@ -91,7 +114,7 @@ async function useWorkspace(dir, win) {
   await ensureWorkspace()
   rememberWorkspace(dir)
   if (win) watchWorkspace(win)
-  return { current: workspace, recent: recentWorkspaces() }
+  return { current: workspace, recent: reachableWorkspaces() }
 }
 
 /**
@@ -388,7 +411,7 @@ function slugify(name) {
 function registerIpc(win) {
   ipcMain.handle('apps:list', () => listApps())
   ipcMain.handle('workspace:path', () => workspace)
-  ipcMain.handle('workspace:list', () => ({ current: workspace, recent: recentWorkspaces() }))
+  ipcMain.handle('workspace:list', () => ({ current: workspace, recent: reachableWorkspaces() }))
 
   ipcMain.handle('workspace:use', async (_e, dir) => {
     // Only switch to somewhere that still exists: a folder can be moved or a
@@ -402,9 +425,8 @@ function registerIpc(win) {
   })
 
   ipcMain.handle('workspace:forget', (_e, dir) => {
-    const recent = recentWorkspaces().filter((p) => p !== dir)
-    writeSettings({ ...readSettings(), recentWorkspaces: recent })
-    return { current: workspace, recent }
+    writeSettings({ ...readSettings(), recentWorkspaces: recentWorkspaces().filter((p) => p !== dir) })
+    return { current: workspace, recent: reachableWorkspaces() }
   })
 
   ipcMain.handle('workspace:reveal', async (_e, appId) => {
@@ -571,6 +593,32 @@ async function createWindow() {
   return win
 }
 
+/**
+ * Which folder to open on launch.
+ *
+ * A saved workspace that has since been deleted is discarded rather than
+ * recreated. ensureWorkspace() would happily mkdir it and reseed, which turns a
+ * folder that no longer exists into a plausible looking empty one and hides the
+ * fact that the real work is elsewhere.
+ */
+function startupWorkspace() {
+  // In dev the host UI is served by Vite from the repo, so point at the repo's
+  // own examples folder; otherwise the interface list and the urls would
+  // disagree about which interfaces exist.
+  if (DEV_URL) return path.join(HERE, '..', 'examples')
+  if (WORKSPACE_OVERRIDE) return WORKSPACE_OVERRIDE
+
+  const saved = readSettings().workspace
+  if (saved) {
+    try {
+      if (fs.statSync(saved).isDirectory()) return saved
+    } catch {
+      console.warn(`[planchette] saved workspace is gone, falling back to the default: ${saved}`)
+    }
+  }
+  return path.join(app.getPath('documents'), 'Planchette')
+}
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
@@ -579,14 +627,11 @@ app.whenReady().then(async () => {
   // In dev the host UI is served by Vite from the repo, so point the workspace at
   // the repo's own apps folder; otherwise the app list and the URLs would
   // disagree about which apps exist.
-  workspace = DEV_URL
-    ? path.join(HERE, '..', 'apps')
-    : process.env.PLANCHETTE_WORKSPACE ||
-      readSettings().workspace ||
-      path.join(app.getPath('documents'), 'Planchette')
+  workspace = startupWorkspace()
 
   await ensureWorkspace()
-  if (!DEV_URL) rememberWorkspace(workspace)
+  // Do not record a dev run or an override: neither is a choice the user made.
+  if (!DEV_URL && !WORKSPACE_OVERRIDE) rememberWorkspace(workspace)
   registerProtocol()
 
   // macOS reads the dock icon from the bundle, which an unpackaged run has not

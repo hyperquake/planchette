@@ -30,13 +30,18 @@ const check = (name, ok, detail = '') => {
 
 /* ---------------- build the artifact the way a release does ---------------- */
 
+// Its own output directory, not dist/. Building into dist/ left the desktop app
+// serving a relative-base build, which broke the other test suite: an isolated
+// test should not be able to do that.
+const OUT = 'dist-embed-test'
 process.env.PLANCHETTE_BASE = './'
+await fs.rm(OUT, { recursive: true, force: true })
 for (const configFile of ['vite.config.ts', 'vite.sdk.config.ts', 'vite.vendor.config.ts']) {
-  await build({ configFile, logLevel: 'error' })
+  await build({ configFile, logLevel: 'error', build: { outDir: OUT, emptyOutDir: false } })
 }
 
 const stage = await fs.mkdtemp(path.join(os.tmpdir(), 'planchette-embed-'))
-await fs.cp('dist', path.join(stage, 'planchette', 'embed'), { recursive: true })
+await fs.cp(OUT, path.join(stage, 'planchette', 'embed'), { recursive: true })
 
 // A page that frames the embed, which is the arrangement production uses: the
 // page frames the host, and the host frames the interface.
@@ -95,9 +100,17 @@ for (const [label, urlPath] of [
 
 /* ---------------- drive it ---------------- */
 
+// Its own userData directory, so the test browser cannot touch the real app's
+// stored settings.
+const userData = await fs.mkdtemp(path.join(os.tmpdir(), 'planchette-udata-'))
 const electron = spawn(
   createRequire(import.meta.url)('electron'),
-  ['scripts/embed-browser.cjs', `${origin}/page.html`, `--remote-debugging-port=${PORT}`],
+  [
+    'scripts/embed-browser.cjs',
+    `${origin}/page.html`,
+    `--remote-debugging-port=${PORT}`,
+    `--user-data-dir=${userData}`,
+  ],
   { stdio: ['ignore', 'pipe', 'pipe'] },
 )
 let stderr = ''
@@ -320,6 +333,8 @@ try {
   electron.kill('SIGKILL')
   server.close()
   await fs.rm(stage, { recursive: true, force: true })
+  await fs.rm(OUT, { recursive: true, force: true })
+  await fs.rm(userData, { recursive: true, force: true })
 }
 
 const failed = results.filter((r) => !r.ok)

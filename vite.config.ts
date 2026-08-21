@@ -38,11 +38,18 @@ function entries(): Record<string, string> {
  * exchange for a rule with no exceptions.
  */
 function copyExampleAssets(): Plugin {
+  // Read from the resolved config rather than assuming dist/: the embed test
+  // builds into its own directory, and hardcoding this shipped the example pages
+  // without any of the files they fetch at runtime.
+  let buildOutDir = 'dist'
   return {
     name: 'planchette-copy-example-assets',
     apply: 'build',
+    configResolved(config) {
+      buildOutDir = config.build.outDir
+    },
     closeBundle() {
-      const outDir = resolve(root, 'dist', 'examples')
+      const outDir = resolve(root, buildOutDir, 'examples')
       for (const name of readdirSync(resolve(root, 'examples'))) {
         const from = resolve(root, 'examples', name)
         try {
