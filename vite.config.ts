@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite'
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { defineConfig, type Plugin } from 'vite'
+import { cpSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -22,7 +22,48 @@ function entries(): Record<string, string> {
   return out
 }
 
+/**
+ * Copy each example folder into the build verbatim, minus the page Vite already
+ * emitted and the notes nobody serves.
+ *
+ * An interface may fetch its own files at runtime, and a runtime fetch is
+ * invisible to the bundler: radial-atlas reads content/content.json and every
+ * plate SVG that way, so a build without this plugin ships the page and none of
+ * its content. Copying the rest of the folder verbatim also matches what the
+ * desktop app does, where the workspace folder is served as-is, so an interface
+ * that works in the app works in a static build too.
+ *
+ * The example's own main.js and lib/ get copied as well and go unused, since the
+ * built page points at the hashed bundle. That is a few unreferenced kilobytes in
+ * exchange for a rule with no exceptions.
+ */
+function copyExampleAssets(): Plugin {
+  return {
+    name: 'planchette-copy-example-assets',
+    apply: 'build',
+    closeBundle() {
+      const outDir = resolve(root, 'dist', 'examples')
+      for (const name of readdirSync(resolve(root, 'examples'))) {
+        const from = resolve(root, 'examples', name)
+        try {
+          if (!statSync(from).isDirectory()) continue
+        } catch {
+          continue
+        }
+        cpSync(from, resolve(outDir, name), {
+          recursive: true,
+          filter: (src) => !/(?:index\.html|\.md)$/i.test(src),
+        })
+      }
+    },
+  }
+}
+
 export default defineConfig({
+  // Relative by default is wrong for the dev server, so the override is what the
+  // redistributable web artifact uses: PLANCHETTE_BASE=./ bakes in no deploy path.
+  base: process.env.PLANCHETTE_BASE || '/',
+  plugins: [copyExampleAssets()],
   // Read once at build time so the about panel can state the version without
   // importing package.json into the bundle.
   define: {

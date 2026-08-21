@@ -10,6 +10,7 @@
     "build": "vite build && vite build --config vite.sdk.config.ts && vite build --config vite.vendor.config.ts",
     "build:types": "tsc -p tsconfig.sdk.json",
     "build:seed": "npm run build:types && node scripts/build-seed.mjs",
+    "pack:web": "node scripts/pack-web.mjs",
     "preview": "vite preview",
     "check": "tsc --noEmit",
     "electron:dev": "electron . --dev-url=http://localhost:5173",

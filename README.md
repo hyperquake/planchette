@@ -114,6 +114,18 @@ interface with the pucks left where they were.
 See [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md) for packaging, code signing,
 and what a first-time user has to click past.
 
+## Embedding it in a page
+
+The host runs in a browser, so a public page can embed a working simulator rather
+than a video:
+
+    <base>/index.html?embed=1&app=radial-atlas&zoom=0.62&center=0.42,0.5
+
+Each release attaches `planchette-web-<version>.zip`, built with a relative base
+so no deployment path is baked in. See [`docs/EMBED.md`](docs/EMBED.md) for the
+url contract and, in particular, for how to choose `zoom`, which is the one
+decision that matters.
+
 ## Layout
 
 | Path                    | What it is                                                        |
@@ -122,7 +134,7 @@ and what a first-time user has to click past.
 | `src/sdk/`              | `@planchette/sdk`, the only module an interface imports.                |
 | `examples/<id>/`        | Example interfaces. Seeded into a fresh workspace.                |
 | `electron/`             | The desktop shell: custom protocol, workspace, file watching.      |
-| `scripts/`              | Workspace seed assembly, ad-hoc signing, the smoke test.           |
+| `scripts/`              | Workspace seed assembly, ad-hoc signing, the smoke test, web packaging. |
 | `docs/`                 | API reference, design rules, wire protocol, distribution.          |
 
 ## Scripts

@@ -71,7 +71,9 @@ function webSource(): AppSource {
   return {
     kind: 'web',
     list: async () => WEB_APPS,
-    urlFor: (id) => `/examples/${id}/index.html`,
+    // BASE_URL, not a leading slash: the redistributable web build is served
+    // from wherever the site puts it, with no deploy path baked in.
+    urlFor: (id) => `${import.meta.env.BASE_URL}examples/${id}/index.html`,
     // Vite's own client reloads the iframe on save, so there is nothing to do.
     onChange: () => {},
     workspace: null,
@@ -82,7 +84,7 @@ function desktopSource(bridge: DesktopBridge): AppSource {
   return {
     kind: 'desktop',
     list: () => bridge.listApps(),
-    urlFor: (id) => `/workspace/${id}/index.html`,
+    urlFor: (id) => `${import.meta.env.BASE_URL}workspace/${id}/index.html`,
     onChange: (cb) => bridge.onAppsChanged(cb),
     workspace: {
       path: () => bridge.workspacePath(),

@@ -15,6 +15,53 @@ const $ = <T extends HTMLElement = HTMLElement>(sel: string): T => {
   return el
 }
 
+/* ---------------- embed mode ---------------- */
+
+/**
+ * Embed mode, for the live demo a public page can put in an iframe.
+ *
+ *   index.html?embed=1&app=radial-atlas
+ *
+ * Same entry and same bundle as the full tool on purpose. A separate embed page
+ * would be a lookalike that can quietly drift from what people actually
+ * download, and the whole point of embedding a real simulator is that it is real.
+ *
+ * What changes: no authoring chrome, no browser storage, and a puck already on
+ * the surface so a visitor sees an interface responding rather than an empty
+ * table. What does not change: the surface is still laid out at the table's true
+ * resolution, and scaling already keys off the container rather than the window,
+ * so an iframe of any size works without special handling.
+ */
+const params = new URLSearchParams(location.search)
+const EMBED = params.has('embed')
+/** Fallback when no app is named. Reads best in a small frame: the puck does something visibly spatial. */
+const EMBED_DEFAULT_APP = 'radial-atlas'
+
+/**
+ * Framing, for embeds only.
+ *
+ * `zoom=fit` shows the whole surface and never breaks, which is why it is the
+ * default, but a 1218mm table in a 760px frame is about 19 percent and nothing on
+ * it is readable. A demo that wants legible type has to crop, so `zoom=<number>`
+ * with `center=<x,y>` picks a window instead. There is no universally right
+ * number: it depends on the frame the page gives us. See docs/EMBED.md.
+ */
+const embedZoomParam = params.get('zoom')
+const embedFixedZoom =
+  embedZoomParam && embedZoomParam !== 'fit' && Number.isFinite(Number(embedZoomParam))
+    ? Math.min(Math.max(Number(embedZoomParam), 0.05), 2)
+    : null
+
+function embedCenter(): { x: number; y: number } {
+  const raw = (params.get('center') ?? '').split(',').map(Number)
+  if (raw.length === 2 && raw.every((n) => Number.isFinite(n))) {
+    return { x: Math.min(Math.max(raw[0]!, 0), 1), y: Math.min(Math.max(raw[1]!, 0), 1) }
+  }
+  return { x: 0.5, y: 0.5 }
+}
+
+if (EMBED) document.body.classList.add('embed')
+
 const stage = $('#stage')
 const sizer = $('#sizer')
 const surfaceEl = $('#surface')
@@ -38,6 +85,8 @@ const PREFS_KEY = 'planchette/prefs'
 
 function loadPrefs(): Prefs {
   const fallback: Prefs = { app: '', surface: PRESETS[0]!.id, zoomMode: 'fit', zoom: 1 }
+  // A returning visitor must not be shown whatever the last one left behind.
+  if (EMBED) return { ...fallback, app: params.get('app') || EMBED_DEFAULT_APP }
   try {
     const saved = JSON.parse(localStorage.getItem(PREFS_KEY) ?? '{}') as Partial<Prefs>
     return {
@@ -53,7 +102,10 @@ function loadPrefs(): Prefs {
 }
 
 const prefs = loadPrefs()
-const savePrefs = () => localStorage.setItem(PREFS_KEY, JSON.stringify(prefs))
+const savePrefs = () => {
+  if (EMBED) return
+  localStorage.setItem(PREFS_KEY, JSON.stringify(prefs))
+}
 
 /* ---------------- table state across reloads ---------------- */
 
@@ -79,6 +131,7 @@ interface SavedPuck {
 }
 
 function persistTable(model: TableModel): void {
+  if (EMBED) return
   const pucks: SavedPuck[] = model
     .puckIds()
     .map((id) => model.publicPuck(id)!)
@@ -91,6 +144,7 @@ function persistTable(model: TableModel): void {
 }
 
 function restoreTable(model: TableModel): void {
+  if (EMBED) return
   try {
     const saved = JSON.parse(sessionStorage.getItem(TABLE_KEY) ?? '[]') as SavedPuck[]
     for (const p of saved) {
@@ -107,7 +161,8 @@ function restoreTable(model: TableModel): void {
 const model = new TableModel(infoFor(prefs.surface))
 const frame = new AppFrame(iframe, model)
 const overlay = new Overlay($('#overlay'), model)
-const inspector = new Inspector($('#inspector'), model)
+// Not merely hidden: it does DOM work every frame, which an embed has no use for.
+const inspector = EMBED ? null : new Inspector($('#inspector'), model)
 
 // Every mutation of the model reaches the app as a discrete event. The full
 // state snapshot is sent separately, once per frame.
@@ -125,8 +180,10 @@ installSimApi(model, frame, () => appList)
 
 function fitScale(): number {
   const s = model.getSurface()
+  if (embedFixedZoom !== null) return embedFixedZoom
   if (prefs.zoomMode === 'fixed') return prefs.zoom
-  const pad = 32
+  // Twice the css padding on #stage, which embed mode halves.
+  const pad = EMBED ? 16 : 32
   return Math.min((stage.clientWidth - pad) / s.widthPx, (stage.clientHeight - pad) / s.heightPx)
 }
 
@@ -143,10 +200,24 @@ function applyZoom(): void {
   zoomReadout.textContent = `${Math.round(f * 100)}%`
   $('#zoom-fit').classList.toggle('on', prefs.zoomMode === 'fit')
   $('#zoom-1').classList.toggle('on', prefs.zoomMode === 'fixed' && prefs.zoom === 1)
+
+  // A cropped embed positions the surface so the requested point lands in the
+  // middle of the frame, rather than scrolling. #stage hides its overflow in
+  // embed mode, so the crop is even on all sides and nothing scrolls under the
+  // visitor's mouse while they are trying to drag a puck.
+  if (EMBED && embedFixedZoom !== null) {
+    const c = embedCenter()
+    sizer.style.position = 'absolute'
+    sizer.style.left = `${stage.clientWidth / 2 - c.x * s.widthPx * f}px`
+    sizer.style.top = `${stage.clientHeight / 2 - c.y * s.heightPx * f}px`
+    sizer.style.margin = '0'
+  }
 }
 
 new ResizeObserver(() => {
-  if (prefs.zoomMode === 'fit') applyZoom()
+  // A cropped embed also has to recentre when the container resizes, so it is not
+  // enough to check for fit mode here.
+  if (prefs.zoomMode === 'fit' || (EMBED && embedFixedZoom !== null)) applyZoom()
 }).observe(stage)
 
 /* ---------------- app list ---------------- */
@@ -320,7 +391,7 @@ surfaceSelect.addEventListener('change', () => {
   savePrefs()
   model.setSurface(infoFor(prefs.surface))
   frame.applySurface()
-  inspector.renderSurface()
+  inspector?.renderSurface()
   applyZoom()
 })
 
@@ -371,7 +442,7 @@ function tick(now: number): void {
     lastPersist = now
     persistTable(model)
   }
-  inspector.tick(now)
+  inspector?.tick(now)
   requestAnimationFrame(tick)
 }
 
@@ -380,11 +451,18 @@ restoreTable(model)
 applyZoom()
 requestAnimationFrame(tick)
 
-setupAbout()
+if (!EMBED) setupAbout()
 
 void (async () => {
   await refreshApps()
   await setupWorkspace()
+
+  // An empty table demonstrates nothing. Seed one puck clear of the centre, where
+  // most examples put their shared content. `?puck=none` suppresses it for a page
+  // that would rather script the scene itself through window.sim.
+  if (EMBED && params.get('puck') !== 'none' && !model.hasContacts()) {
+    model.addPuck({ markerId: 1, x: 0.28, y: 0.5 })
+  }
 })()
 
 console.info('[planchette] window.sim is available. Try: sim.addPuck({ markerId: 3, mmX: 600, mmY: 340 })')

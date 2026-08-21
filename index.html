@@ -125,6 +125,20 @@
   #ws-status:not(:empty) { margin-top: 6px; font-size: 11px; color: #e08b6a; }
   .keys { font-size: 11px; color: var(--dim); line-height: 1.7; }
 
+  /* ---- embed mode ----
+     One column, no authoring chrome. The dark palette stays: it is functional
+     colour for a tool that runs in a dark room, and an embedded panel should
+     look like the thing you download, not like the page around it. */
+  body.embed #topbar,
+  body.embed #inspector,
+  body.embed #about { display: none; }
+  body.embed #app { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+  /* Half the default, so the surface fills a small frame. fitScale() matches. */
+  body.embed #stage { padding: 8px; position: relative; }
+  /* A cropped embed is positioned, not scrolled: nothing should scroll under the
+     mouse while a visitor is dragging a puck. */
+  body.embed #stage { overflow: hidden; }
+
   /* ---- about ---- */
   #about {
     border: 1px solid var(--line); border-radius: 10px; padding: 0;

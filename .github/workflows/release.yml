@@ -85,6 +85,10 @@ jobs:
       # all, and macOS reports it as "damaged".
       - run: npx electron-builder --mac
 
+      # The embeddable web build, for a site to pin a version of. Platform
+      # independent, so it is only built here rather than on both runners.
+      - run: npm run pack:web
+
       - name: Publish release assets
         if: startsWith(github.ref, 'refs/tags/')
         env:
@@ -106,6 +110,7 @@ jobs:
             release/*.dmg
             release/*.zip
           if-no-files-found: error
+          # release/*.zip is both the mac zips and planchette-web-<version>.zip.
 
   windows:
     runs-on: [self-hosted, Windows]
