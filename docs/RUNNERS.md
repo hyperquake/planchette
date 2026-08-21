@@ -22,8 +22,8 @@ The first CI run proved most of this rather than assuming it:
   works in CI, which was the main unknown.
 - Repository access through the org runner group is therefore already granted.
   Nothing needed adding.
-- The macOS job sits unassigned across two separate runs. Labels and group access
-  are both fine, proven by Windows working from the same group, so
+- The macOS job sits unassigned across three separate runs. Labels and group
+  access are both fine, proven by Windows working from the same group, so
   `Brooklyn-Studio` is **offline**. Its last job in any repo was 2026-08-12.
 
 **Correction.** An earlier version of this file claimed the Windows smoke test
@@ -33,8 +33,11 @@ been failing on Windows from the first run with `spawn EINVAL`, because Node 20.
 and later refuse to spawn a `.cmd` file without `shell: true` and the script
 launched Electron through `npx.cmd`. It now resolves the Electron binary directly.
 
-Whether `PROTO1-P8` has an interactive desktop is therefore **still unverified**:
-the smoke test never got as far as opening a window.
+With that fixed, the Windows smoke test **does** pass on `PROTO1-P8`: all 23
+checks, Electron window and all. This time the pass is real rather than masked,
+because the step is gating and the run immediately before it reported `failure`,
+which a `continue-on-error` step cannot do. So that machine has an interactive
+desktop.
 
 ## The one thing that has to be true
 
@@ -70,11 +73,10 @@ Both already build other projects, so most of this is present.
 
 **Windows** (`PROTO1-P8`)
 - Node 24, same as above.
-- `npm run smoke` opens a real Electron window, so it needs a logged-in desktop
-  session. It is gating in `ci.yml` so that a failure is visible rather than
-  masked. If it turns out this runner is registered as a service, and so has no
-  interactive desktop, that step needs `continue-on-error` and the reason should
-  be recorded here rather than left to be rediscovered.
+- `npm run smoke` opens a real Electron window and passes here, so this runner
+  has a logged-in desktop session. It is gating in `ci.yml` so a failure is
+  visible rather than masked. If the runner is ever re-registered as a Windows
+  service it loses that desktop, and the step will need `continue-on-error`.
 
 Neither machine needs Wine, a Developer ID, or any signing setup. Electron's
 ~100MB binary download is cached per machine (`~/Library/Caches/electron`,
