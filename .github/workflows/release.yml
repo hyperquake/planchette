@@ -83,7 +83,9 @@ jobs:
       # Ad-hoc signs via scripts/adhoc-sign.cjs, which needs the Xcode command
       # line tools. Without a valid signature an arm64 build will not launch at
       # all, and macOS reports it as "damaged".
-      - run: npx electron-builder --mac
+      # --publish never: electron-builder auto-publishes on a tag build in CI and
+      # demands its own GH_TOKEN. Publishing is done explicitly below.
+      - run: npx electron-builder --mac --publish never
 
       # The embeddable web build, for a site to pin a version of. Platform
       # independent, so it is only built here rather than on both runners.
@@ -139,7 +141,8 @@ jobs:
         continue-on-error: true
         run: npm run smoke
 
-      - run: npx electron-builder --win
+      # See the mac job: build only, publish explicitly below.
+      - run: npx electron-builder --win --publish never
 
       - name: Publish release assets
         if: startsWith(github.ref, 'refs/tags/')
