@@ -91,18 +91,20 @@ jobs:
       # independent, so it is only built here rather than on both runners.
       - run: npm run pack:web
 
+      # A javascript action rather than the gh cli, for the same reason as the
+      # windows job: it needs nothing but the runner's own node.
       - name: Publish release assets
         if: startsWith(github.ref, 'refs/tags/')
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          gh release create "$GITHUB_REF_NAME" release/*.dmg release/*.zip \
-            --title "Planchette $GITHUB_REF_NAME" \
-            --notes-file docs/release-notes.md \
-            --verify-tag \
-            --draft \
-          || gh release upload "$GITHUB_REF_NAME" release/*.dmg release/*.zip --clobber
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Planchette ${{ github.ref_name }}
+          body_path: docs/release-notes.md
+          draft: true
+          files: |
+            release/*.dmg
+            release/*.zip
+          fail_on_unmatched_files: true
 
       - name: Upload workflow artifacts (non-tag runs)
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
@@ -144,19 +146,19 @@ jobs:
       # See the mac job: build only, publish explicitly below.
       - run: npx electron-builder --win --publish never
 
+      # A javascript action rather than the gh cli: gh is not installed on this
+      # runner, and assuming a cli exists on a hand-provisioned machine is how the
+      # first release attempt failed. This needs nothing but the runner's own node.
       - name: Publish release assets
         if: startsWith(github.ref, 'refs/tags/')
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $assets = Get-ChildItem release/*.exe | ForEach-Object { $_.FullName }
-          gh release create "$env:GITHUB_REF_NAME" $assets `
-            --title "Planchette $env:GITHUB_REF_NAME" `
-            --notes-file docs/release-notes.md `
-            --verify-tag `
-            --draft
-          if ($LASTEXITCODE -ne 0) { gh release upload "$env:GITHUB_REF_NAME" $assets --clobber }
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Planchette ${{ github.ref_name }}
+          body_path: docs/release-notes.md
+          draft: true
+          files: release/*.exe
+          fail_on_unmatched_files: true
 
       - name: Upload workflow artifacts (non-tag runs)
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
