@@ -42,7 +42,6 @@
   #about-open img { display: block; height: 18px; width: auto; }
   #topbar label { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--dim); }
   .sep { width: 1px; height: 20px; background: var(--line); }
-  .spacer { flex: 1; }
   select, input, button {
     font: inherit; font-size: 12px; color: var(--ink); background: #23272f;
     border: 1px solid var(--line); border-radius: 5px; padding: 4px 8px;
@@ -219,9 +218,6 @@
     <button id="pinch-mode" title="Drag creates a symmetric pair of contacts">Pinch pair</button>
     <button id="pass-mouse" title="Let the mouse reach the app directly, for debugging">Pass mouse</button>
     <button id="clear">Clear</button>
-    <span class="spacer"></span>
-    <button id="inspector-toggle" title="Show or hide the inspector">Inspector</button>
-    <button id="settings-open" title="Settings" hidden>Settings</button>
   </header>
 
   <main id="stage">
@@ -271,7 +267,9 @@
         <kbd>1</kbd>&hellip;<kbd>9</kbd> pin a lasting contact at the cursor, press again to lift it.
         <kbd>esc</kbd> clears all contacts. A real touchscreen gives you true simultaneous fingers.<br>
         <b>Pinch pair</b> makes a drag emit two contacts; <kbd>wheel</kbd> changes the spread,
-        <kbd>shift</kbd>+<kbd>wheel</kbd> rotates the pair.
+        <kbd>shift</kbd>+<kbd>wheel</kbd> rotates the pair.<br>
+        <b>This panel.</b> <kbd>&#8984;</kbd>+<kbd>I</kbd> hides it. In the desktop app,
+        <b>View &rsaquo; Toggle Inspector</b>.
       </div>
     </section>
   </aside>

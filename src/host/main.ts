@@ -264,11 +264,8 @@ async function setupWorkspace(): Promise<void> {
 
   // Settings only has anything to configure when there is a workspace, which
   // means the desktop build.
-  const openBtn = $('#settings-open')
   const dialog = $<HTMLDialogElement>('#settings')
-  openBtn.hidden = false
 
-  openBtn.addEventListener('click', () => dialog.showModal())
   $('#settings-close').addEventListener('click', () => dialog.close())
   dialog.addEventListener('click', (ev) => {
     if (ev.target === dialog) dialog.close()
@@ -377,11 +374,7 @@ async function setupWorkspace(): Promise<void> {
     if (!dialog.open) dialog.showModal()
     openForm()
   })
-  bridge?.onToggleInspector(() => {
-    prefs.inspector = !prefs.inspector
-    savePrefs()
-    applyInspector()
-  })
+  bridge?.onToggleInspector(toggleInspector)
   bridge?.onAbout(() => $<HTMLDialogElement>('#about').showModal())
 
   $('#ws-new-create').addEventListener('click', () => void create())
@@ -464,11 +457,22 @@ for (const btn of [pinchBtn, passBtn]) {
 
 $('#clear').addEventListener('click', () => model.clear())
 
-$('#inspector-toggle').addEventListener('click', () => {
+function toggleInspector(): void {
   prefs.inspector = !prefs.inspector
   savePrefs()
   applyInspector()
-})
+}
+
+// The desktop build drives this from View > Toggle Inspector, and a menu
+// accelerator never reaches the page. A browser has no menus, so bind the same
+// shortcut here, and only here, so the two can never both fire.
+if (!window.planchette) {
+  window.addEventListener('keydown', (ev) => {
+    if (ev.key.toLowerCase() !== 'i' || !(ev.metaKey || ev.ctrlKey)) return
+    ev.preventDefault()
+    toggleInspector()
+  })
+}
 
 /* ---------------- frame loop ---------------- */
 
@@ -478,7 +482,6 @@ let lastPersist = 0
 /** Collapse or restore the inspector column, and remember the choice. */
 function applyInspector(): void {
   document.body.classList.toggle('no-inspector', !prefs.inspector)
-  $('#inspector-toggle').classList.toggle('on', prefs.inspector)
   // The stage changed width, so refit. The ResizeObserver covers this too, but
   // doing it here means no visible one-frame lag.
   applyZoom()

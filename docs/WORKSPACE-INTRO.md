@@ -11,12 +11,12 @@ JavaScript: no build step, no install, no framework.
 ## How to work
 
 1. Open the Planchette app. Your interfaces appear in the **App** menu.
-2. Drag pucks onto the surface and touch it with the mouse. The **Inspector**
-   button opens a panel showing every value your interface is being sent.
+2. Drag pucks onto the surface and touch it with the mouse. **View > Toggle
+   Inspector** shows every value your interface is being sent.
 3. Edit files here with any editor. **Save and it reloads by itself**, keeping
    your pucks where you left them.
 4. **File > New interface…** creates a folder with starter files ready to edit.
-   **Settings** is where you change which folder this is.
+   **Planchette > Settings**, or `⌘,`, is where you change which folder this is.
 
 ## The shape of an interface
 

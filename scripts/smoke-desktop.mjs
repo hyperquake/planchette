@@ -162,13 +162,20 @@ try {
   // the desktop build. The inspector is a debug panel and starts closed.
   const panel = await evaluate(`
     return {
-      settingsAvailable: !document.getElementById('settings-open').hidden,
+      settingsDialogWired: Boolean(document.getElementById('settings')),
       workspacePath: document.getElementById('workspace-path').textContent,
       inspectorClosedByDefault: document.body.classList.contains('no-inspector'),
+      // Both live in the menus now, so no toolbar button should remain.
+      strayButtons: ['settings-open', 'inspector-toggle'].filter((id) => document.getElementById(id)),
     };
   `)
-  check('settings available in the desktop build', panel?.settingsAvailable === true, panel?.workspacePath)
+  check(
+    'settings dialog knows its workspace',
+    panel?.settingsDialogWired === true && Boolean(panel?.workspacePath),
+    panel?.workspacePath,
+  )
   check('inspector closed by default', panel?.inspectorClosedByDefault === true)
+  check('no leftover toolbar buttons', Array.isArray(panel?.strayButtons) && panel.strayButtons.length === 0, JSON.stringify(panel?.strayButtons))
 
   // The simulator itself works end to end inside the shell.
   const sim = await evaluate(`
