@@ -493,8 +493,25 @@ function devIcon() {
 
 function buildMenu(win) {
   const isMac = process.platform === 'darwin'
+  const appMenu = {
+    label: app.name,
+    submenu: [
+      { label: `About ${app.name}`, click: () => win.webContents.send('app:about') },
+      { type: 'separator' },
+      { label: 'Settings…', accelerator: 'CmdOrCtrl+,', click: () => win.webContents.send('app:settings') },
+      { type: 'separator' },
+      { role: 'services' },
+      { type: 'separator' },
+      { role: 'hide' },
+      { role: 'hideOthers' },
+      { role: 'unhide' },
+      { type: 'separator' },
+      { role: 'quit' },
+    ],
+  }
+
   const template = [
-    ...(isMac ? [{ role: 'appMenu' }] : []),
+    ...(isMac ? [appMenu] : []),
     {
       label: 'File',
       submenu: [
@@ -519,6 +536,12 @@ function buildMenu(win) {
           label: 'Forget This Workspace',
           click: () => win.webContents.send('app:forget-workspace'),
         },
+        ...(isMac
+          ? []
+          : [
+              { type: 'separator' },
+              { label: 'Settings…', accelerator: 'CmdOrCtrl+,', click: () => win.webContents.send('app:settings') },
+            ]),
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' },
       ],
@@ -536,6 +559,12 @@ function buildMenu(win) {
           label: 'Reload Simulator',
           accelerator: 'CmdOrCtrl+Shift+R',
           click: () => win.webContents.reload(),
+        },
+        { type: 'separator' },
+        {
+          label: 'Toggle Inspector',
+          accelerator: 'CmdOrCtrl+I',
+          click: () => win.webContents.send('app:toggle-inspector'),
         },
         { type: 'separator' },
         { role: 'toggleDevTools' },

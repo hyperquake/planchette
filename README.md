@@ -40,8 +40,9 @@ Pick an interface from the **App** menu, then:
 - **Pinch pair** makes a drag emit two contacts; scroll changes the spread,
   shift-scroll rotates the pair.
 
-The inspector on the right shows every value the interface is being sent, which
-is where most debugging happens.
+The **Inspector** button in the toolbar opens a panel showing every value the
+interface is being sent, which is where most debugging happens. It starts closed,
+since it is a debug panel rather than part of the tool.
 
 ## Writing an interface
 

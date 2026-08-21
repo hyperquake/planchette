@@ -79,12 +79,14 @@ interface Prefs {
   surface: string
   zoomMode: 'fit' | 'fixed'
   zoom: number
+  /** The inspector is a debug panel, so it starts closed. */
+  inspector: boolean
 }
 
 const PREFS_KEY = 'planchette/prefs'
 
 function loadPrefs(): Prefs {
-  const fallback: Prefs = { app: '', surface: PRESETS[0]!.id, zoomMode: 'fit', zoom: 1 }
+  const fallback: Prefs = { app: '', surface: PRESETS[0]!.id, zoomMode: 'fit', zoom: 1, inspector: false }
   // A returning visitor must not be shown whatever the last one left behind.
   if (EMBED) return { ...fallback, app: params.get('app') || EMBED_DEFAULT_APP }
   try {
@@ -95,6 +97,7 @@ function loadPrefs(): Prefs {
       surface: PRESETS.some((p) => p.id === saved.surface) ? saved.surface! : fallback.surface,
       zoomMode: saved.zoomMode === 'fixed' ? 'fixed' : 'fit',
       zoom: typeof saved.zoom === 'number' ? saved.zoom : 1,
+      inspector: saved.inspector === true,
     }
   } catch {
     return fallback
@@ -259,7 +262,21 @@ async function setupWorkspace(): Promise<void> {
   const ws = appSource.workspace
   if (!ws) return
 
-  $('#workspace-section').hidden = false
+  // Settings only has anything to configure when there is a workspace, which
+  // means the desktop build.
+  const openBtn = $('#settings-open')
+  const dialog = $<HTMLDialogElement>('#settings')
+  openBtn.hidden = false
+
+  openBtn.addEventListener('click', () => dialog.showModal())
+  $('#settings-close').addEventListener('click', () => dialog.close())
+  dialog.addEventListener('click', (ev) => {
+    if (ev.target === dialog) dialog.close()
+  })
+  window.planchette?.onOpenSettings(() => {
+    if (!dialog.open) dialog.showModal()
+  })
+
   const pathEl = $('#workspace-path')
   const select = $<HTMLSelectElement>('#ws-select')
   const selectRow = $('#ws-select-row')
@@ -349,10 +366,23 @@ async function setupWorkspace(): Promise<void> {
 
   // Every workspace verb is a File menu item now, so the panel is just the
   // picker, the path, and the field that naming a new folder needs.
+  $('#ws-reveal').addEventListener('click', () => void ws.reveal())
+  $('#ws-add').addEventListener('click', () => void changeWorkspace())
+  $('#ws-forget').addEventListener('click', () => void forgetWorkspace())
+
   const bridge = window.planchette
   bridge?.onChooseWorkspace(() => void changeWorkspace())
   bridge?.onForgetWorkspace(() => void forgetWorkspace())
-  bridge?.onNewInterface(openForm)
+  bridge?.onNewInterface(() => {
+    if (!dialog.open) dialog.showModal()
+    openForm()
+  })
+  bridge?.onToggleInspector(() => {
+    prefs.inspector = !prefs.inspector
+    savePrefs()
+    applyInspector()
+  })
+  bridge?.onAbout(() => $<HTMLDialogElement>('#about').showModal())
 
   $('#ws-new-create').addEventListener('click', () => void create())
   $('#ws-new-cancel').addEventListener('click', closeForm)
@@ -434,10 +464,25 @@ for (const btn of [pinchBtn, passBtn]) {
 
 $('#clear').addEventListener('click', () => model.clear())
 
+$('#inspector-toggle').addEventListener('click', () => {
+  prefs.inspector = !prefs.inspector
+  savePrefs()
+  applyInspector()
+})
+
 /* ---------------- frame loop ---------------- */
 
 let pendingPersist = false
 let lastPersist = 0
+
+/** Collapse or restore the inspector column, and remember the choice. */
+function applyInspector(): void {
+  document.body.classList.toggle('no-inspector', !prefs.inspector)
+  $('#inspector-toggle').classList.toggle('on', prefs.inspector)
+  // The stage changed width, so refit. The ResizeObserver covers this too, but
+  // doing it here means no visible one-frame lag.
+  applyZoom()
+}
 
 function tick(now: number): void {
   const changed = model.consumeDirty()
@@ -453,12 +498,15 @@ function tick(now: number): void {
     lastPersist = now
     persistTable(model)
   }
-  inspector?.tick(now)
+  // Built once so toggling is instant, but idle while hidden: it does DOM work
+  // every frame and a closed panel has no use for it.
+  if (prefs.inspector) inspector?.tick(now)
   requestAnimationFrame(tick)
 }
 
 // Restore before the app loads, so the handshake replays the pucks to it.
 restoreTable(model)
+applyInspector()
 applyZoom()
 requestAnimationFrame(tick)
 

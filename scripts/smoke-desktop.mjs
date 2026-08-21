@@ -158,9 +158,17 @@ try {
   const escape = await evaluate("const r = await fetch('/workspace/dial-demo/../../../../etc/passwd'); return r.status")
   check('path traversal blocked', escape === 404, `status ${escape}`)
 
-  // The workspace panel is visible only in the desktop build.
-  const panel = await evaluate("return { hidden: document.getElementById('workspace-section').hidden, path: document.getElementById('workspace-path').textContent }")
-  check('workspace panel shown', panel?.hidden === false, panel?.path)
+  // Workspace configuration lives in the settings dialog, which only appears in
+  // the desktop build. The inspector is a debug panel and starts closed.
+  const panel = await evaluate(`
+    return {
+      settingsAvailable: !document.getElementById('settings-open').hidden,
+      workspacePath: document.getElementById('workspace-path').textContent,
+      inspectorClosedByDefault: document.body.classList.contains('no-inspector'),
+    };
+  `)
+  check('settings available in the desktop build', panel?.settingsAvailable === true, panel?.workspacePath)
+  check('inspector closed by default', panel?.inspectorClosedByDefault === true)
 
   // The simulator itself works end to end inside the shell.
   const sim = await evaluate(`

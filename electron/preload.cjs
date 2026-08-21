@@ -20,6 +20,9 @@ contextBridge.exposeInMainWorld('planchette', {
   onChooseWorkspace: (cb) => ipcRenderer.on('app:choose-workspace', () => cb()),
   onForgetWorkspace: (cb) => ipcRenderer.on('app:forget-workspace', () => cb()),
   onNewInterface: (cb) => ipcRenderer.on('app:new-interface', () => cb()),
+  onOpenSettings: (cb) => ipcRenderer.on('app:settings', () => cb()),
+  onToggleInspector: (cb) => ipcRenderer.on('app:toggle-inspector', () => cb()),
+  onAbout: (cb) => ipcRenderer.on('app:about', () => cb()),
 
   version: process.versions.electron,
 })

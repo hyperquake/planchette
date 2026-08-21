@@ -20,6 +20,11 @@
     font: 13px/1.4 system-ui, -apple-system, sans-serif;
   }
   #app { display: grid; grid-template-columns: 1fr 350px; grid-template-rows: auto 1fr; height: 100vh; }
+  /* The inspector is a debug panel, off by default. Collapsing the column rather
+     than hiding the element gives the stage the width back, and the stage's
+     ResizeObserver refits the surface on its own. */
+  body.no-inspector #app { grid-template-columns: 1fr; }
+  body.no-inspector #inspector { display: none; }
 
   /* ---- topbar ---- */
   #topbar {
@@ -37,6 +42,7 @@
   #about-open img { display: block; height: 18px; width: auto; }
   #topbar label { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--dim); }
   .sep { width: 1px; height: 20px; background: var(--line); }
+  .spacer { flex: 1; }
   select, input, button {
     font: inherit; font-size: 12px; color: var(--ink); background: #23272f;
     border: 1px solid var(--line); border-radius: 5px; padding: 4px 8px;
@@ -149,6 +155,23 @@
      mouse while a visitor is dragging a puck. */
   body.embed #stage { overflow: hidden; }
 
+  /* ---- settings ---- */
+  #settings {
+    border: 1px solid var(--line); border-radius: 10px; padding: 0;
+    background: var(--panel); color: var(--ink); box-shadow: 0 24px 80px #000a;
+  }
+  #settings::backdrop { background: #04060ab8; }
+  .settings-inner { padding: 22px 24px 20px; width: 420px; }
+  .settings-inner h2 {
+    margin: 0 0 16px; font-size: 13px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .08em; color: var(--dim);
+  }
+  .settings-inner h3 {
+    margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--ink);
+  }
+  .settings-inner section { padding-bottom: 6px; }
+  #settings-close { margin-top: 18px; }
+
   /* ---- about ---- */
   #about {
     border: 1px solid var(--line); border-radius: 10px; padding: 0;
@@ -196,6 +219,9 @@
     <button id="pinch-mode" title="Drag creates a symmetric pair of contacts">Pinch pair</button>
     <button id="pass-mouse" title="Let the mouse reach the app directly, for debugging">Pass mouse</button>
     <button id="clear">Clear</button>
+    <span class="spacer"></span>
+    <button id="inspector-toggle" title="Show or hide the inspector">Inspector</button>
+    <button id="settings-open" title="Settings" hidden>Settings</button>
   </header>
 
   <main id="stage">
@@ -208,25 +234,6 @@
   </main>
 
   <aside id="inspector">
-    <section id="workspace-section" hidden>
-      <h2>Workspace</h2>
-      <!-- A select is only shown once there is a choice to make. With one
-           workspace it is a dropdown of one, which looks like a control and does
-           nothing, so the name is plain text instead. -->
-      <div class="ws-name" id="ws-name"></div>
-      <div class="ws-row" id="ws-select-row" hidden>
-        <select id="ws-select" title="Switch workspace"></select>
-      </div>
-      <div class="ws-path" id="workspace-path"></div>
-      <!-- Revealed by File > New interface. The verbs live in the menu; this is
-           here because naming a folder needs a text field. -->
-      <div class="ws-row" id="ws-new-form" hidden>
-        <input id="ws-new-name" type="text" placeholder="my-interface">
-        <button id="ws-new-create">Create</button>
-        <button id="ws-new-cancel">Cancel</button>
-      </div>
-      <div id="ws-status"></div>
-    </section>
     <section>
       <h2>Surface</h2>
       <div id="surface-readout"></div>
@@ -269,6 +276,37 @@
     </section>
   </aside>
 </div>
+<dialog id="settings">
+  <div class="settings-inner">
+    <h2>Settings</h2>
+    <section>
+      <h3>Workspace</h3>
+      <!-- A select is only shown once there is a choice to make. With one
+           workspace it is a dropdown of one, which looks like a control and does
+           nothing, so the name is plain text instead. -->
+      <div class="ws-name" id="ws-name"></div>
+      <div class="ws-row" id="ws-select-row" hidden>
+        <select id="ws-select" title="Switch workspace"></select>
+      </div>
+      <div class="ws-path" id="workspace-path"></div>
+      <!-- Revealed by File > New interface. The verbs live in the menu; this is
+           here because naming a folder needs a text field. -->
+      <div class="ws-row" id="ws-new-form" hidden>
+        <input id="ws-new-name" type="text" placeholder="my-interface">
+        <button id="ws-new-create">Create</button>
+        <button id="ws-new-cancel">Cancel</button>
+      </div>
+      <div id="ws-status"></div>
+      <div class="ws-row">
+        <button id="ws-reveal" title="Show this folder in the file manager">Open folder</button>
+        <button id="ws-add" title="Pick another folder to work in">Add&hellip;</button>
+        <button id="ws-forget" title="Remove from the recent list">Forget</button>
+      </div>
+    </section>
+    <button id="settings-close">Close</button>
+  </div>
+</dialog>
+
 <dialog id="about">
   <div class="about-inner">
     <img id="about-lockup" alt="Planchette">
