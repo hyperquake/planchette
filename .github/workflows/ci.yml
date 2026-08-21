@@ -50,7 +50,12 @@ jobs:
       - run: npm run check
       - run: npm run build
       - run: npm run build:seed
-      # Gating: PROTO1-P8 runs in a logged-in session, and this passed there on
-      # the first run. If the runner is ever re-registered as a Windows service
-      # it will lose its interactive desktop and this needs continue-on-error.
+      # Gating: PROTO1-P8 runs in a logged-in session. If the runner is ever
+      # re-registered as a Windows service it will lose its interactive desktop
+      # and this needs continue-on-error.
       - run: npm run smoke
+      # The embed artifact is platform independent, so running it on both runners
+      # is redundant in principle. It runs here anyway: it is the only place it
+      # gets exercised while Brooklyn-Studio is offline, and redundant coverage is
+      # cheaper than none.
+      - run: npm run smoke:embed
