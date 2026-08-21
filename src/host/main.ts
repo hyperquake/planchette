@@ -1,3 +1,5 @@
+import lockupUrl from '../../brand/lockup-horizontal-white.svg?url'
+import markUrl from '../../brand/mark-white.svg?url'
 import { AppFrame } from './appframe'
 import { appSource } from './appsource'
 import { installInput } from './input'
@@ -278,6 +280,36 @@ async function setupWorkspace(): Promise<void> {
   })
 }
 
+/* ---------------- identity ---------------- */
+
+/**
+ * The only place the product names itself. Deliberately the app's own dark
+ * chrome with the white lockup rather than Hyperquake's white ground: the brand
+ * palette governs identity surfaces and public pages, not the working tool.
+ *
+ * The lockup SVGs carry live text and fall back to Helvetica without Untitled
+ * Sans installed, so they are development assets until the wordmark is outlined
+ * from the licensed font.
+ */
+function setupAbout(): void {
+  const dialog = $<HTMLDialogElement>('#about')
+  const open = $('#about-open')
+
+  // Both marks come from brand/, so there is one source of truth for the
+  // artwork and no hand-drawn copy to drift.
+  open.innerHTML = `<img src="${markUrl}" alt="">`
+  $<HTMLImageElement>('#about-lockup').src = lockupUrl
+  $('#about-version').textContent = __APP_VERSION__
+
+  open.addEventListener('click', () => dialog.showModal())
+  $('#about-close').addEventListener('click', () => dialog.close())
+  // Clicking the backdrop closes it: the dialog element itself fills the
+  // backdrop, so a click landing on it rather than on the panel is outside.
+  dialog.addEventListener('click', (ev) => {
+    if (ev.target === dialog) dialog.close()
+  })
+}
+
 /* ---------------- controls ---------------- */
 
 const surfaceSelect = $<HTMLSelectElement>('#surface-select')
@@ -347,6 +379,8 @@ function tick(now: number): void {
 restoreTable(model)
 applyZoom()
 requestAnimationFrame(tick)
+
+setupAbout()
 
 void (async () => {
   await refreshApps()

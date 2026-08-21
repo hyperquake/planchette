@@ -27,7 +27,14 @@
     padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line);
     flex-wrap: wrap;
   }
-  .brand { font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: 11px; color: var(--dim); }
+  /* Mark only, not the wordmark: the lockup may not go below 17px type and this
+     bar is not tall enough for that. Doubles as the about button. */
+  #about-open {
+    display: grid; place-items: center; padding: 4px; background: none; border: 0;
+    border-radius: 5px; cursor: pointer; opacity: .8;
+  }
+  #about-open:hover { opacity: 1; background: #23272f; }
+  #about-open img { display: block; height: 18px; width: auto; }
   #topbar label { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--dim); }
   .sep { width: 1px; height: 20px; background: var(--line); }
   select, input, button {
@@ -117,6 +124,28 @@
   }
   #ws-status:not(:empty) { margin-top: 6px; font-size: 11px; color: #e08b6a; }
   .keys { font-size: 11px; color: var(--dim); line-height: 1.7; }
+
+  /* ---- about ---- */
+  #about {
+    border: 1px solid var(--line); border-radius: 10px; padding: 0;
+    background: var(--panel); color: var(--ink);
+    box-shadow: 0 24px 80px #000a;
+  }
+  #about::backdrop { background: #04060ab8; }
+  /* Clear space is one mark height on every side of the lockup. The mark is
+     109.44 of the lockup's 619.12 viewBox width, so at 210px wide that is 37px. */
+  .about-inner { padding: 37px 40px 30px; min-width: 330px; text-align: center; }
+  #about-lockup { display: block; width: 210px; height: auto; margin: 0 auto; }
+  .about-endorse {
+    margin: 18px 0 0; font-size: 12px; color: var(--dim);
+  }
+  .about-facts {
+    display: grid; grid-template-columns: auto auto; gap: 4px 14px;
+    justify-content: center; margin: 26px 0 0; font-size: 11px;
+  }
+  .about-facts dt { color: var(--dim); text-align: right; }
+  .about-facts dd { margin: 0; font-family: var(--mono); text-align: left; }
+  #about-close { margin-top: 26px; }
   .keys kbd {
     font-family: var(--mono); font-size: 10px; background: #23272f; border: 1px solid var(--line);
     border-bottom-width: 2px; border-radius: 3px; padding: 0 4px; color: var(--ink);
@@ -126,7 +155,7 @@
 <body>
 <div id="app">
   <header id="topbar">
-    <span class="brand">Planchette</span>
+    <button id="about-open" title="About Planchette" aria-label="About Planchette"></button>
     <label>App <select id="app-select"></select></label>
     <button id="reload" title="Reload the app iframe">Reload</button>
     <span class="sep"></span>
@@ -218,6 +247,17 @@
     </section>
   </aside>
 </div>
+<dialog id="about">
+  <div class="about-inner">
+    <img id="about-lockup" alt="Planchette">
+    <p class="about-endorse">A tool from Hyperquake</p>
+    <dl class="about-facts">
+      <dt>Version</dt><dd id="about-version"></dd>
+      <dt>Licence</dt><dd>&copy; 2026 Hyperquake. All rights reserved.</dd>
+    </dl>
+    <button id="about-close">Close</button>
+  </div>
+</dialog>
 <script type="module" src="/src/host/main.ts"></script>
 </body>
 </html>

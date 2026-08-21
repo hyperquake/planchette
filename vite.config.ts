@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import { readdirSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -23,6 +23,13 @@ function entries(): Record<string, string> {
 }
 
 export default defineConfig({
+  // Read once at build time so the about panel can state the version without
+  // importing package.json into the bundle.
+  define: {
+    __APP_VERSION__: JSON.stringify(
+      JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')).version,
+    ),
+  },
   resolve: {
     // Designer apps import from '@planchette/sdk' rather than a relative path.
     alias: { '@planchette/sdk': resolve(root, 'src/sdk/index.ts') },
