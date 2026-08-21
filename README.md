@@ -7,7 +7,9 @@ table interfaces without the hardware in front of them.
 
 Interfaces are plain HTML, CSS, and JavaScript. No build step, no framework.
 
-![The dial example running in the simulator](docs/images/dial-demo.jpg)
+![Four pucks on the arcane-table example, arcs webbing between them](docs/images/arcane-table.jpg)
+
+*`arcane-table`: four pucks, each with a rune ring, arcing to its neighbours.*
 
 ## Why this exists
 
@@ -61,6 +63,8 @@ Pick an interface from the **App** menu, then:
 interface is being sent, which is where most debugging happens. It starts closed,
 since it is a debug panel rather than part of the tool.
 
+![The inspector open, showing pucks, contacts and the event log](docs/images/inspector.jpg)
+
 [`CLAUDE.md`](CLAUDE.md) is the guide to the codebase itself.
 
 ## Writing an interface
@@ -113,8 +117,6 @@ table. [`docs/API.md`](docs/API.md) is the complete SDK reference, and
 An interface folder is an ordinary static site. It can reference any local
 script, stylesheet, image, font, model, or shader at any depth, and remote
 `https` URLs as well, including ES module imports from a CDN.
-
-![The Three.js showcase](docs/images/arcane-table.jpg)
 
 `examples/arcane-table/` is also the reference for the three things that catch people out
 in WebGL on a table: never multiply by `devicePixelRatio` (the surface is already

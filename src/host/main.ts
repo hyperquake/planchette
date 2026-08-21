@@ -177,7 +177,20 @@ installInput(surfaceEl, model, {
 })
 
 let appList: string[] = []
-installSimApi(model, frame, () => appList)
+
+/** The one way an interface gets chosen, so the picker always matches the frame. */
+function selectApp(appId: string): void {
+  prefs.app = appId
+  savePrefs()
+  if (appSelect.value !== appId) appSelect.value = appId
+  frame.load(appId)
+}
+
+installSimApi(model, frame, () => appList, selectApp, (on) => {
+  prefs.inspector = on
+  savePrefs()
+  applyInspector()
+})
 
 /* ---------------- zoom ---------------- */
 
@@ -242,11 +255,7 @@ async function refreshApps(force = false): Promise<void> {
   if (force || frame.currentApp !== prefs.app) frame.load(prefs.app)
 }
 
-appSelect.addEventListener('change', () => {
-  prefs.app = appSelect.value
-  savePrefs()
-  frame.load(prefs.app)
-})
+appSelect.addEventListener('change', () => selectApp(appSelect.value))
 
 // A file changed on disk. Reload the app being viewed, and pick up new folders.
 appSource.onChange((appId) => {

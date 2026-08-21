@@ -36,6 +36,12 @@ It arrives with four interfaces to look at. Try `radial-atlas` first: drop a puc
 on the surface by pressing **P**, then drag it, and right-drag or scroll to
 rotate it.
 
+![A puck opening a nested radial menu, with a plate loaded in the centre](images/radial-atlas.jpg)
+
+Rotating the puck sweeps the ring, touching the ring opens a collection, and
+touching the outer ring loads a plate into the middle of the table. Then look at
+`arcane-table` for what the surface can do when it is not being sensible.
+
 ## 3. Make your own
 
 **File > New interface…**, give it a name, and the app scaffolds a folder with

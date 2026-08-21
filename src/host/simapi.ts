@@ -11,6 +11,8 @@ export interface SimApi {
   endTouch(id: number): void
   clear(): void
   loadApp(appId: string): void
+  /** Show or hide the inspector, for scripted scenes and screenshots. */
+  showInspector(on: boolean): void
   reload(): void
   state(): TableState
   /** Ids of the apps currently available. */
@@ -25,7 +27,15 @@ export interface SimApi {
  *
  * Takes millimetres and degrees, because that is what a human reasons in.
  */
-export function installSimApi(model: TableModel, frame: AppFrame, apps: () => string[]): SimApi {
+export function installSimApi(
+  model: TableModel,
+  frame: AppFrame,
+  apps: () => string[],
+  /** Selects an interface the way the picker does, so the two cannot disagree. */
+  selectApp: (appId: string) => void,
+  /** Shows or hides the inspector through the same path the menu uses. */
+  showInspector: (on: boolean) => void,
+): SimApi {
   const toNorm = (mmX: number, mmY: number) => {
     const s = model.getSurface()
     return { x: mmX / s.widthMm, y: mmY / s.heightMm }
@@ -59,7 +69,10 @@ export function installSimApi(model: TableModel, frame: AppFrame, apps: () => st
     },
     endTouch: (id) => model.removeTouch(id),
     clear: () => model.clear(),
-    loadApp: (appId) => frame.load(appId),
+    // Goes through the same path as the picker: calling frame.load directly left
+    // the dropdown showing a different interface than the one on screen.
+    loadApp: (appId) => selectApp(appId),
+    showInspector: (on) => showInspector(Boolean(on)),
     reload: () => frame.reload(),
     state: () => model.snapshot(),
     // A getter, because the desktop build discovers apps at runtime and the
