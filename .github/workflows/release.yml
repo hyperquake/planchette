@@ -99,6 +99,7 @@ jobs:
             --title "Planchette $GITHUB_REF_NAME" \
             --notes-file docs/release-notes.md \
             --verify-tag \
+            --draft \
           || gh release upload "$GITHUB_REF_NAME" release/*.dmg release/*.zip --clobber
 
       - name: Upload workflow artifacts (non-tag runs)
@@ -150,7 +151,8 @@ jobs:
           gh release create "$env:GITHUB_REF_NAME" $assets `
             --title "Planchette $env:GITHUB_REF_NAME" `
             --notes-file docs/release-notes.md `
-            --verify-tag
+            --verify-tag `
+            --draft
           if ($LASTEXITCODE -ne 0) { gh release upload "$env:GITHUB_REF_NAME" $assets --clobber }
 
       - name: Upload workflow artifacts (non-tag runs)

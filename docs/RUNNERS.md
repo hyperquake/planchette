@@ -171,7 +171,9 @@ git push --follow-tags
 
 The tag triggers `release.yml`. Both platforms build in parallel and each
 publishes its own assets to one GitHub Release, using create-or-upload so
-whichever finishes first creates it. `scripts/check-version.mjs` refuses to build
+whichever finishes first creates it. The release is a **draft**: download both
+artifacts and run them before publishing by hand. Drop `--draft` from the two
+`gh release create` calls if you would rather it went out directly. `scripts/check-version.mjs` refuses to build
 if the tag and `package.json` disagree, because electron-builder names artifacts
 from `package.json` and a mismatch produces a `v0.2.0` release full of `0.1.0`
 files.
