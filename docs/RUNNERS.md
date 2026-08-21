@@ -56,6 +56,63 @@ that platform is offline. To tell the two apart, look at whether the other
 platform's job started: if one runs and the other queues, it is a machine, not a
 permission.
 
+## Adding a Mac runner
+
+`Brooklyn-Studio` has been offline since 2026-08-12, so no macOS release has ever
+been produced. Registering another Mac is the fix.
+
+**Repo level rather than org level, for a personal machine.** The other runners
+are org level, which is right for shared hardware, but an org runner can be used
+by any repository the runner group allows. A laptop is not shared hardware, so
+scoping it to this repository is the smaller exposure and needs no org admin.
+Use the org path only if you actually want it available to other projects.
+
+Everything else is already in place on a machine set up for this repo: Node,
+git, `zip`, and the Xcode command line tools for `codesign`. The `allowScripts`
+approval for Electron's binary download is committed in `package.json`, so
+`npm ci` needs no intervention.
+
+```sh
+mkdir -p ~/actions-runner && cd ~/actions-runner
+curl -O -L https://github.com/actions/runner/releases/download/v2.336.0/actions-runner-osx-arm64-2.336.0.tar.gz
+tar xzf actions-runner-osx-arm64-2.336.0.tar.gz
+
+# Fetched inline so the registration token never lands in a shell history or a
+# transcript. It expires in an hour and only permits adding a runner.
+TOKEN=$(gh api -X POST repos/Potion/planchette/actions/runners/registration-token --jq .token)
+./config.sh --url https://github.com/Potion/planchette --token "$TOKEN" --unattended --replace
+
+./run.sh            # foreground, to watch one job go through
+./svc.sh install    # then install it properly
+./svc.sh start
+```
+
+No custom labels are needed. GitHub applies `self-hosted`, `macOS` and `ARM64`
+automatically, and the workflows ask for `[self-hosted, macOS]`.
+
+Check it took:
+
+    gh api repos/Potion/planchette/actions/runners --jq '.runners[] | "\(.name) \(.status) \(.labels|map(.name)|join(","))"'
+
+### Three things about a laptop that a desktop would not have
+
+**`svc.sh` installs a LaunchAgent, not a LaunchDaemon.** That is what makes the
+smoke tests work, because a LaunchAgent runs inside your logged-in session and so
+has a desktop to open a window on. It also means the runner is offline whenever
+you are logged out.
+
+**Sleep takes the runner offline mid-job.** For a long release build, hold it
+awake:
+
+    caffeinate -dimsu -w $(pgrep -f Runner.Listener | head -1)
+
+**Three Macs will answer `[self-hosted, macOS]`** once this one is registered:
+this machine, `jeffbook-mac`, and `Brooklyn-Studio` when it returns. Jobs land on
+whichever is free, so a release can build on any of them. All are Apple Silicon,
+so the artifacts are identical; the only cost is unpredictability about which
+machine did the work. If that matters, add a `planchette` label to the one you
+want and change `runs-on` to `[self-hosted, macOS, planchette]`.
+
 ## What each machine needs installed
 
 Both already build other projects, so most of this is present.
