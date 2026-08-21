@@ -5,7 +5,7 @@ conflower-player builds on. Nothing needs registering.
 
 | Job | Label set | Machine |
 | --- | --------- | ------- |
-| macOS build and release | `[self-hosted, macOS]` | `Brooklyn-Studio` (Mac Studio, Apple Silicon) |
+| macOS build and release | `[self-hosted, macOS]` | `hqmbp26-crouse`, or `Brooklyn-Studio` and `jeffbook-mac` when they are up |
 | Windows build and release | `[self-hosted, Windows]` | `PROTO1-P8` |
 
 Both live in the org runner group `default`. There are no repo-scoped runners on
@@ -22,9 +22,13 @@ The first CI run proved most of this rather than assuming it:
   works in CI, which was the main unknown.
 - Repository access through the org runner group is therefore already granted.
   Nothing needed adding.
-- The macOS job sits unassigned across three separate runs. Labels and group
-  access are both fine, proven by Windows working from the same group, so
-  `Brooklyn-Studio` is **offline**. Its last job in any repo was 2026-08-12.
+- Both platforms now pass in full. `hqmbp26-crouse` was registered as an org
+  runner on 2026-08-21 and picks up macOS jobs immediately: checkout, `npm ci`,
+  typecheck, all three builds, the workspace seed, the 23-check desktop smoke test
+  and the 19-check embed test.
+- Before that, the macOS job sat unassigned across four runs. Labels and group
+  access were fine the whole time, proven by Windows working from the same group.
+  `Brooklyn-Studio` was simply offline; its last job in any repo was 2026-08-12.
 
 **Correction.** An earlier version of this file claimed the Windows smoke test
 passed on the first run. It did not. `continue-on-error: true` reports a failed
@@ -58,14 +62,17 @@ permission.
 
 ## Adding a Mac runner
 
-`Brooklyn-Studio` has been offline since 2026-08-12, so no macOS release has ever
-been produced. Registering another Mac is the fix.
+`hqmbp26-crouse` was added this way on 2026-08-21, org level, so it is available
+to other Potion projects as well as this one. Repo level is the tighter choice for
+a personal machine, since an org runner can be used by any repository its group
+allows; org level is the right call if you do want to share it.
 
-**Repo level rather than org level, for a personal machine.** The other runners
-are org level, which is right for shared hardware, but an org runner can be used
-by any repository the runner group allows. A laptop is not shared hardware, so
-scoping it to this repository is the smaller exposure and needs no org admin.
-Use the org path only if you actually want it available to other projects.
+**Registering and running are two separate steps**, and it is easy to do the first
+and think you are finished. `config.sh` writes the settings and exits, at which
+point GitHub lists the runner but it is offline and jobs queue with no error. The
+`svc.sh` lines below are what actually make it pick up work. A quick way to tell
+them apart: if `~/actions-runner/_diag/Runner_*.log` has no `Listening for Jobs`
+line, the runner has never run.
 
 Everything else is already in place on a machine set up for this repo: Node,
 git, `zip`, and the Xcode command line tools for `codesign`. The `allowScripts`
@@ -82,10 +89,15 @@ tar xzf actions-runner-osx-arm64-2.336.0.tar.gz
 TOKEN=$(gh api -X POST repos/Potion/planchette/actions/runners/registration-token --jq .token)
 ./config.sh --url https://github.com/Potion/planchette --token "$TOKEN" --unattended --replace
 
-./run.sh            # foreground, to watch one job go through
-./svc.sh install    # then install it properly
+# Registration is done at this point, and the runner is still offline. This is
+# the part that matters:
+./svc.sh install
 ./svc.sh start
 ```
+
+Confirm it is actually listening, not merely registered:
+
+    launchctl list | grep actions.runner
 
 No custom labels are needed. GitHub applies `self-hosted`, `macOS` and `ARM64`
 automatically, and the workflows ask for `[self-hosted, macOS]`.
