@@ -54,10 +54,14 @@ export class Inspector {
     if (this.pauseEl.checked) return
     const filter = this.filterEl.value.trim().toLowerCase()
     const isPuck = name.startsWith('puck')
+    // Terse on purpose. The panel is about 300px wide, and a longer line either
+    // needs a horizontal scrollbar or clips mid-value, which is worse than terse:
+    // the labelled version of all of this is in the tables directly above.
+    const mm = `${data.mmX.toFixed(0)},${data.mmY.toFixed(0)}`
     const detail = isPuck
-      ? `marker=${(data as Puck).markerId} mm=${data.mmX.toFixed(0)},${data.mmY.toFixed(0)} angle=${((data as Puck).angle * DEG).toFixed(0)}deg`
-      : `mm=${data.mmX.toFixed(0)},${data.mmY.toFixed(0)} r=${(data as Touch).radiusMm}mm edge=${(data as Touch).edge}`
-    const line = `${name.padEnd(11)} #${String(data.id).padEnd(4)} ${detail}`
+      ? `mkr${(data as Puck).markerId}`.padEnd(7) + mm.padEnd(9) + `${((data as Puck).angle * DEG).toFixed(0)}°`
+      : mm.padEnd(9) + `r${(data as Touch).radiusMm}`.padEnd(4) + (data as Touch).edge
+    const line = `${name.padEnd(11)}#${String(data.id).padEnd(4)}${detail}`
     if (filter && !line.toLowerCase().includes(filter)) return
 
     const row = document.createElement('div')

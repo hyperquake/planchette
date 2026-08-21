@@ -15,8 +15,7 @@ JavaScript: no build step, no install, no framework.
    right shows every value your interface is being sent.
 3. Edit files here with any editor. **Save and it reloads by itself**, keeping
    your pucks where you left them.
-4. **New interface…** in the Workspace panel creates a folder with starter files
-   ready to edit.
+4. **File > New interface…** creates a folder with starter files ready to edit.
 
 ## The shape of an interface
 
@@ -57,7 +56,7 @@ moments. Both see the same table.
 | `API.md`           | The complete SDK reference.                                     |
 | `PROTOCOL.md`      | The data model and wire format underneath.                      |
 | `types/`           | Type declarations, so your editor autocompletes the SDK.         |
-| `_template/`       | The smallest thing that works. Copy it, or use **New interface…** |
+| `_template/`       | The smallest thing that works. Copy it, or use **File > New interface…** |
 | `dial-demo/`       | A puck as a rotary dial. Start here; it is short.                |
 | `radial-atlas/`    | Nested radial menus, and loading images and text from disk.       |
 | `arcane-table/`    | A Three.js showcase: bloom, particles, arcs between pucks.        |

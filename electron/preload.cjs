@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld('planchette', {
   onAppsChanged: (cb) => ipcRenderer.on('apps:changed', (_e, appId) => cb(appId)),
   onReloadApp: (cb) => ipcRenderer.on('app:reload', () => cb()),
   onChooseWorkspace: (cb) => ipcRenderer.on('app:choose-workspace', () => cb()),
+  onForgetWorkspace: (cb) => ipcRenderer.on('app:forget-workspace', () => cb()),
+  onNewInterface: (cb) => ipcRenderer.on('app:new-interface', () => cb()),
 
   version: process.versions.electron,
 })

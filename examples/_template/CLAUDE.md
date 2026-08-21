@@ -4,8 +4,8 @@ This folder is a starting point. Copy it, rename it, and edit `index.html` and
 `main.js`. Whatever you name the folder shows up in the simulator's app picker
 automatically.
 
-In the desktop app, **New app...** in the Workspace panel does the copying for
-you. Working in the repo, copy this folder to `examples/<your-name>`.
+In the desktop app, **File > New interface…** does the copying for you. Working
+in the repo, copy this folder to `examples/<your-name>`.
 
 Read the `CLAUDE.md` next to this folder for the house rules. They matter more
 than the API does.

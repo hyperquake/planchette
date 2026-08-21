@@ -477,13 +477,25 @@ function buildMenu(win) {
       label: 'File',
       submenu: [
         {
+          // Reveals the naming field in the workspace panel rather than opening a
+          // dialog: naming a folder needs a text input, and Electron has no prompt.
+          label: 'New Interface…',
+          accelerator: 'CmdOrCtrl+N',
+          click: () => win.webContents.send('app:new-interface'),
+        },
+        { type: 'separator' },
+        {
           label: 'Open Workspace Folder',
           accelerator: 'CmdOrCtrl+Shift+O',
           click: () => shell.openPath(workspace),
         },
         {
-          label: 'Change Workspace…',
+          label: 'Add Workspace…',
           click: () => win.webContents.send('app:choose-workspace'),
+        },
+        {
+          label: 'Forget This Workspace',
+          click: () => win.webContents.send('app:forget-workspace'),
         },
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' },

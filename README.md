@@ -106,9 +106,9 @@ pixel, which is 0.3mm here), and size everything in millimetres.
 `npm run dist:mac` / `dist:win` produce a double-clickable app for people who do
 not want a terminal. It still lets them author interfaces: interfaces live in a
 **workspace** folder on disk, seeded on first run with the examples, the API and
-design-rules docs, SDK type declarations, and agent guidance. **New interface…**
-scaffolds a named folder ready to edit, and the recent-workspaces picker keeps one
-workspace per project. The app watches the folder, so saving a file reloads the
+design-rules docs, SDK type declarations, and agent guidance. **File > New
+interface…** scaffolds a named folder ready to edit, and the recent-workspaces
+picker keeps one workspace per project. The app watches the folder, so saving a file reloads the
 interface with the pucks left where they were.
 
 See [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md) for packaging, code signing,

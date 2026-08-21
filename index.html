@@ -105,8 +105,13 @@
   td.hi { color: var(--accent); }
   tr.empty td { color: #5a6170; text-align: center; padding: 8px; font-style: italic; }
   #log {
-    height: 220px; overflow-y: auto; background: #101215; border: 1px solid var(--line);
-    border-radius: 5px; padding: 4px; font-family: var(--mono); font-size: 10.5px; white-space: pre;
+    height: 220px; overflow-y: auto; overflow-x: hidden;
+    background: #101215; border: 1px solid var(--line);
+    border-radius: 5px; padding: 4px; font-family: var(--mono); font-size: 10.5px;
+    /* pre-wrap rather than pre: the column padding is preserved, but an
+       unusually long line wraps instead of forcing a horizontal scrollbar
+       across a 300px panel or clipping a value off the right edge. */
+    white-space: pre-wrap; overflow-wrap: anywhere;
   }
   .log-row { padding: 1px 2px; }
   .log-row.log-puck { color: var(--puck); }
@@ -115,6 +120,9 @@
   .log-tools input[type=text] { flex: 1; min-width: 0; }
   .log-tools label { font-size: 11px; color: var(--dim); display: flex; align-items: center; gap: 3px; }
   .ws-row { display: flex; gap: 5px; margin-top: 6px; }
+  /* display:flex above outranks the user agent's [hidden] rule, so without this
+     the naming row is always visible. */
+  .ws-row[hidden] { display: none; }
   .ws-row button { flex: 1; white-space: nowrap; }
   .ws-row input { flex: 1; min-width: 0; }
   #ws-select { width: 100%; min-width: 0; }
@@ -204,14 +212,8 @@
         <select id="ws-select" title="Recent workspaces"></select>
       </div>
       <div class="ws-path" id="workspace-path"></div>
-      <div class="ws-row">
-        <button id="ws-reveal" title="Show this folder in the file manager">Open folder</button>
-        <button id="ws-change" title="Pick another folder to work in">Add&hellip;</button>
-        <button id="ws-forget" title="Remove from the recent list">Forget</button>
-      </div>
-      <div class="ws-row">
-        <button id="ws-new" title="Create a folder with starter files, ready to edit">New interface&hellip;</button>
-      </div>
+      <!-- Revealed by File > New interface. The verbs live in the menu; this is
+           here because naming a folder needs a text field. -->
       <div class="ws-row" id="ws-new-form" hidden>
         <input id="ws-new-name" type="text" placeholder="my-interface">
         <button id="ws-new-create">Create</button>

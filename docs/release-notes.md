@@ -26,5 +26,4 @@ then **Run anyway**.
 Planchette creates a workspace at `~/Documents/Planchette` (Windows:
 `Documents\Planchette`) holding example interfaces, the API reference, and the
 design rules. Edit anything in there and the app reloads it, keeping your pucks
-where they were. **New interface…** in the Workspace panel scaffolds a folder
-ready to edit.
+where they were. **File > New interface…** scaffolds a folder ready to edit.

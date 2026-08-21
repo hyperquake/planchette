@@ -30,6 +30,8 @@ export interface DesktopBridge {
   onAppsChanged(cb: (appId: string | null) => void): void
   onReloadApp(cb: () => void): void
   onChooseWorkspace(cb: () => void): void
+  onForgetWorkspace(cb: () => void): void
+  onNewInterface(cb: () => void): void
   version: string
 }
 

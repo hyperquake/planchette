@@ -263,7 +263,6 @@ async function setupWorkspace(): Promise<void> {
   const pathEl = $('#workspace-path')
   const select = $<HTMLSelectElement>('#ws-select')
   const status = $('#ws-status')
-  const newBtn = $('#ws-new')
   const newForm = $('#ws-new-form')
   const nameInput = $<HTMLInputElement>('#ws-new-name')
 
@@ -300,11 +299,7 @@ async function setupWorkspace(): Promise<void> {
 
   const changeWorkspace = async () => switchTo(await ws.choose())
 
-  $('#ws-reveal').addEventListener('click', () => void ws.reveal())
-  $('#ws-change').addEventListener('click', () => void changeWorkspace())
-  window.planchette?.onChooseWorkspace(() => void changeWorkspace())
-
-  $('#ws-forget').addEventListener('click', async () => {
+  const forgetWorkspace = async () => {
     const list = await ws.list()
     // Forgetting the folder you are standing in would leave the picker lying.
     if (list.recent.length < 2) {
@@ -313,11 +308,10 @@ async function setupWorkspace(): Promise<void> {
     }
     draw(await ws.forget(list.current))
     await switchTo(await ws.use((await ws.list()).recent[0]!))
-  })
+  }
 
   const closeForm = () => {
     newForm.hidden = true
-    newBtn.hidden = false
     status.textContent = ''
   }
 
@@ -337,12 +331,19 @@ async function setupWorkspace(): Promise<void> {
     }
   }
 
-  newBtn.addEventListener('click', () => {
+  const openForm = () => {
     newForm.hidden = false
-    newBtn.hidden = true
     nameInput.value = ''
     nameInput.focus()
-  })
+  }
+
+  // Every workspace verb is a File menu item now, so the panel is just the
+  // picker, the path, and the field that naming a new folder needs.
+  const bridge = window.planchette
+  bridge?.onChooseWorkspace(() => void changeWorkspace())
+  bridge?.onForgetWorkspace(() => void forgetWorkspace())
+  bridge?.onNewInterface(openForm)
+
   $('#ws-new-create').addEventListener('click', () => void create())
   $('#ws-new-cancel').addEventListener('click', closeForm)
   nameInput.addEventListener('keydown', (ev) => {
