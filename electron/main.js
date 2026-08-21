@@ -20,6 +20,7 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, protocol, shell
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
+import { Readable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
@@ -229,19 +230,72 @@ function notFound() {
   return new Response('not found', { status: 404, headers: { 'Content-Type': 'text/plain' } })
 }
 
-async function serveFile(file) {
+/** Parse a single-range `bytes=` header against a known size. */
+function parseRange(header, size) {
+  const m = /^bytes=(\d*)-(\d*)$/.exec(String(header).trim())
+  if (!m) return null
+
+  const hasStart = m[1] !== ''
+  const hasEnd = m[2] !== ''
+  if (!hasStart && !hasEnd) return null
+
+  // A suffix range, "bytes=-500", means the last 500 bytes.
+  let start = hasStart ? Number(m[1]) : Math.max(0, size - Number(m[2]))
+  let end = hasStart ? (hasEnd ? Math.min(Number(m[2]), size - 1) : size - 1) : size - 1
+
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || start >= size) return { unsatisfiable: true }
+  return { start, end }
+}
+
+/**
+ * Serve a file, streamed, with byte range support.
+ *
+ * Ranges are not a nicety here. Chromium's media pipeline seeks by asking for
+ * byte ranges, and a video served as one whole response cannot be scrubbed at
+ * all. Worse, an earlier version read every file into memory with readFile,
+ * which on a 692MB video produced a decode error rather than an honest failure.
+ * Streaming also means a large asset no longer costs its own size in RAM.
+ */
+async function serveFile(file, request) {
   if (!file) return notFound()
-  let body
+
+  let size
   try {
-    body = await fsp.readFile(file)
+    const stat = await fsp.stat(file)
+    if (!stat.isFile()) return notFound()
+    size = stat.size
   } catch {
-    // Missing, or a directory, which is the same thing to a caller.
     return notFound()
   }
+
   // Set the type explicitly: Chromium refuses a module script served with the
   // wrong MIME outright, and module scripts are most of what we serve.
   const type = MIME[path.extname(file).toLowerCase()] ?? 'application/octet-stream'
-  return new Response(body, { headers: { 'Content-Type': type } })
+  const rangeHeader = request?.headers?.get?.('range')
+  const range = rangeHeader ? parseRange(rangeHeader, size) : null
+
+  if (range?.unsatisfiable) {
+    return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${size}` } })
+  }
+
+  if (range) {
+    return new Response(Readable.toWeb(fs.createReadStream(file, { start: range.start, end: range.end })), {
+      status: 206,
+      headers: {
+        'Content-Type': type,
+        'Content-Length': String(range.end - range.start + 1),
+        'Content-Range': `bytes ${range.start}-${range.end}/${size}`,
+        'Accept-Ranges': 'bytes',
+      },
+    })
+  }
+
+  // Advertise range support even on a full response, or a media element will
+  // never try to seek.
+  return new Response(Readable.toWeb(fs.createReadStream(file)), {
+    status: 200,
+    headers: { 'Content-Type': type, 'Content-Length': String(size), 'Accept-Ranges': 'bytes' },
+  })
 }
 
 /**
@@ -303,11 +357,11 @@ function registerProtocol() {
       const [, appId, rest] = match
       const file = safeJoin(workspace, appId, rest || 'index.html')
       if (!file) return notFound()
-      return file.toLowerCase().endsWith('.html') ? serveAppHtml(file) : serveFile(file)
+      return file.toLowerCase().endsWith('.html') ? serveAppHtml(file) : serveFile(file, request)
     }
 
     // Everything else is the host UI bundle.
-    return serveFile(safeJoin(DIST, pathname === '/' ? 'index.html' : pathname.replace(/^\//, '')))
+    return serveFile(safeJoin(DIST, pathname === '/' ? 'index.html' : pathname.replace(/^\//, '')), request)
   })
 }
 

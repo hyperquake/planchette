@@ -150,6 +150,28 @@ try {
   const faviconIco = await evaluate("const r = await fetch('/favicon.ico'); return { status: r.status, type: r.headers.get('content-type') }")
   check('favicon.ico served as image/x-icon', faviconIco?.status === 200 && faviconIco.type === 'image/x-icon', `${faviconIco?.status} ${faviconIco?.type}`)
 
+  // Byte ranges. Chromium seeks media by asking for ranges, so without these a
+  // video cannot be scrubbed, and a large file served whole fails as a decode
+  // error rather than an honest one.
+  const ranged = await evaluate(`
+    const r = await fetch('/sdk.js', { headers: { Range: 'bytes=0-99' } });
+    const body = await r.text();
+    return {
+      status: r.status,
+      acceptRanges: r.headers.get('accept-ranges'),
+      contentRange: r.headers.get('content-range'),
+      length: body.length,
+    };
+  `)
+  check(
+    'byte ranges served as 206 partial content',
+    ranged?.status === 206 && ranged.acceptRanges === 'bytes' && /^bytes 0-99\/\d+$/.test(ranged.contentRange ?? '') && ranged.length === 100,
+    `${ranged?.status} ${ranged?.contentRange} ${ranged?.length}b`,
+  )
+
+  const whole = await evaluate("const r = await fetch('/sdk.js'); return { status: r.status, acceptRanges: r.headers.get('accept-ranges') }")
+  check('range support advertised on a full response', whole?.status === 200 && whole.acceptRanges === 'bytes', `${whole?.status} ${whole?.acceptRanges}`)
+
   // App HTML gets an import map so the bare specifier resolves.
   const html = await evaluate("const r = await fetch('/workspace/dial-demo/index.html'); const t = await r.text(); return { status: r.status, importmap: t.includes('importmap'), mapped: t.includes('@planchette/sdk') }")
   check('import map injected into app HTML', html?.status === 200 && html.importmap && html.mapped)

@@ -139,6 +139,4 @@ Nothing here needs rework.
 - **Auto-update.** Not wired. Coworkers get new builds by downloading them. If
   that becomes annoying, `electron-updater` plus a release feed is the usual next
   step, and it needs real signing on macOS to be worth it.
-- **Large media in apps.** Files are read fully into memory rather than streamed,
-  so range requests are not supported. Fine for images and short clips; a long
-  video will not seek.
+

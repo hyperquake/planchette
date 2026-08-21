@@ -149,6 +149,11 @@ Beyond that, an interface folder is an ordinary static site: reference any local
 script, stylesheet, image, font, model, or shader at any depth, and remote
 `https` URLs too, including ES module imports from a CDN.
 
+Local files are streamed and support byte ranges, so `<video>` and `<audio>`
+play and seek from the interface folder. A large file costs no memory beyond what
+is being read. Codec support is whatever Electron's bundled ffmpeg provides,
+which includes H.264 and AAC; an mp4 is the safe choice.
+
 ## Driving the simulator
 
 `window.sim` exists on the simulator page, not inside your interface. Open the
