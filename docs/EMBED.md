@@ -87,9 +87,13 @@ otherwise:
   pointer stream and compares the result in millimetres, which exercises the whole
   chain of page, iframe, cropped surface and scaled transform. It agrees to 0.0mm.
 
-If you write that drag yourself, step it. Two coarse jumps are not a faithful
-pointer stream and will give you a wrong answer while the app is tracking
-perfectly.
+Two things about writing that drag, both learned the hard way. Step it: two
+coarse jumps are not a faithful pointer stream and will give a wrong answer while
+the app tracks perfectly. And derive the expected distance from the surface's live
+bounding rect rather than assuming a zoom and a pixel density, or the check
+becomes a test of whether the window happened to be the size you assumed. The
+same drag reported 76.7mm on one machine and 243.2mm in CI on that same machine
+before this was fixed.
 
 ## What the page has to supply
 

@@ -21,7 +21,6 @@ const PORT = 9555
 /** Mounted under a subpath on purpose: a root-only build would pass at "/". */
 const MOUNT = '/planchette/embed'
 const ZOOM = 0.62
-const PX_PER_MM = 3.1527
 
 const results = []
 const check = (name, ok, detail = '') => {
@@ -222,14 +221,30 @@ try {
 
   /* ---- a real drag, through page, iframe and cropped surface ---- */
 
+  // Read the live geometry rather than assuming a zoom and a pixel density. The
+  // point of the check is that the puck follows the pointer, and deriving the
+  // expectation the same way the host does keeps it true whatever size window the
+  // machine gives us. An earlier version hardcoded both and was wrong by exactly
+  // the ratio of the assumed scale to the real one.
   const before = await evaluate(`
     const frame = document.getElementById('sim');
     const w = frame.contentWindow;
-    const el = w.document.querySelector('[data-puck-id]');
+    const d = w.document;
+    const el = d.querySelector('[data-puck-id]');
     const r = el.getBoundingClientRect();
     const fr = frame.getBoundingClientRect();
-    const p = w.sim.state().pucks[0];
-    return { x: fr.x + r.x + r.width / 2, y: fr.y + r.y + r.height / 2, mmX: p.mmX, mmY: p.mmY };
+    const sr = d.getElementById('surface').getBoundingClientRect();
+    const st = w.sim.state();
+    return {
+      x: fr.x + r.x + r.width / 2,
+      y: fr.y + r.y + r.height / 2,
+      mmX: st.pucks[0].mmX,
+      mmY: st.pucks[0].mmY,
+      surfaceW: sr.width,
+      surfaceH: sr.height,
+      widthMm: st.surface.widthMm,
+      heightMm: st.surface.heightMm,
+    };
   `)
 
   const dx = 150
@@ -258,13 +273,19 @@ try {
   const after = await evaluate(
     "const p = document.getElementById('sim').contentWindow.sim.state().pucks[0]; return { mmX: p.mmX, mmY: p.mmY }",
   )
-  const expected = { dx: dx / ZOOM / PX_PER_MM, dy: dy / ZOOM / PX_PER_MM }
+  // Same arithmetic the host uses: pointer travel as a fraction of the rendered
+  // surface, scaled by the surface's physical width.
+  const expected = {
+    dx: (dx / before.surfaceW) * before.widthMm,
+    dy: (dy / before.surfaceH) * before.heightMm,
+  }
   const moved = { dx: after.mmX - before.mmX, dy: after.mmY - before.mmY }
   const accurate = Math.abs(moved.dx - expected.dx) < 1.5 && Math.abs(moved.dy - expected.dy) < 1.5
   check(
     'mouse drag moves the puck the right distance',
     accurate,
-    `moved ${moved.dx.toFixed(1)},${moved.dy.toFixed(1)}mm expected ${expected.dx.toFixed(1)},${expected.dy.toFixed(1)}mm`,
+    `moved ${moved.dx.toFixed(1)},${moved.dy.toFixed(1)}mm expected ${expected.dx.toFixed(1)},${expected.dy.toFixed(1)}mm ` +
+      `(surface rendered ${before.surfaceW.toFixed(0)}x${before.surfaceH.toFixed(0)}px)`,
   )
 
   /* ---- the other parameters ---- */
