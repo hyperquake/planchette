@@ -84,7 +84,11 @@ covering the things that only break once packaged: workspace seeding, the preloa
 bridge, MIME types, the injected import map actually resolving, path traversal
 being refused, the file watcher, and pucks surviving a reload.
 
-For the web path, drive `window.sim` from the browser console. It takes
+`npm run smoke:embed` is the equivalent for the embeddable web build: it builds
+the artifact with a relative base, serves it from a subpath, frames it in an
+iframe, and drives it over CDP. Both gate CI on the mac runner.
+
+For ad hoc work on the web path, drive `window.sim` from the browser console. It takes
 millimetres and degrees and is the same entry point the toolbar uses.
 
 Note when testing in a browser: a backgrounded tab pauses `requestAnimationFrame`

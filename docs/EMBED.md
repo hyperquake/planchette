@@ -68,6 +68,29 @@ somewhere between the two, around `0.42,0.5`, keeps both in frame.
 A cropped embed is positioned rather than scrolled, so nothing scrolls under the
 visitor's mouse while they are trying to drag a puck.
 
+## Testing it
+
+    npm run smoke:embed
+
+Builds the artifact the way a release does, serves it from a subpath so the
+relative base is exercised rather than assumed, frames it in an iframe the way a
+real page does, and drives it over the Chrome DevTools Protocol. Nineteen checks,
+gating in CI.
+
+The two worth knowing about, because they guard mistakes that are invisible
+otherwise:
+
+- **Runtime content loads.** It asserts the interface reports 18 plates, which is
+  only true if `content.json` was fetched successfully. A build that ships the
+  page without its content passes every other check.
+- **A real drag moves the puck the right distance.** It dispatches a stepped
+  pointer stream and compares the result in millimetres, which exercises the whole
+  chain of page, iframe, cropped surface and scaled transform. It agrees to 0.0mm.
+
+If you write that drag yourself, step it. Two coarse jumps are not a faithful
+pointer stream and will give you a wrong answer while the app is tracking
+perfectly.
+
 ## What the page has to supply
 
 **Tell them to drag the puck.** The simulator does not explain itself, and a

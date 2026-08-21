@@ -18,7 +18,8 @@
     "dist": "npm run prepackage && electron-builder",
     "dist:mac": "npm run prepackage && electron-builder --mac",
     "dist:win": "npm run prepackage && electron-builder --win",
-    "smoke": "node scripts/smoke-desktop.mjs"
+    "smoke": "node scripts/smoke-desktop.mjs",
+    "smoke:embed": "node scripts/smoke-embed.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

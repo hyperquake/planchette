@@ -33,6 +33,10 @@ jobs:
       # Opens a real window, so the runner needs a logged-in desktop session.
       # Gating here: this is the job that proves the packaged shell still works.
       - run: npm run smoke
+      # The embeddable web build is a shipped artifact, so it gets the same
+      # treatment. Builds its own copy with a relative base, so it must run after
+      # nothing in particular but leaves dist/ built that way.
+      - run: npm run smoke:embed
 
   windows:
     runs-on: [self-hosted, Windows]
