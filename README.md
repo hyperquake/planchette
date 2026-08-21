@@ -24,7 +24,24 @@ So the simulator is opinionated about both. It lays out every interface at the
 table's true resolution, reports physical millimetres, and gives you several ways
 to fake simultaneous contacts.
 
-## Quick start
+## Get it
+
+**[Download the latest release](../../releases/latest)** and pick the file for
+your machine: the `arm64.dmg` for an Apple Silicon Mac, the plain `.dmg` for
+Intel, `setup.exe` or the portable `.exe` for Windows.
+
+The builds are not code signed yet, so both systems object the first time:
+right-click and **Open** on macOS, **More info** then **Run anyway** on Windows.
+Once per machine.
+
+**New here? Read [`docs/GETTING-STARTED.md`](docs/GETTING-STARTED.md).** It covers
+the common case end to end: install it, make an interface, and point Claude Code
+at the folder to do the work.
+
+There is nothing to build and no terminal involved unless you are working on the
+simulator itself, which is what the rest of this file is about.
+
+## Working on the simulator
 
     npm install
     npm run dev          # then open http://localhost:5173
@@ -43,6 +60,8 @@ Pick an interface from the **App** menu, then:
 **View > Toggle Inspector**, or `⌘I`, opens a panel showing every value the
 interface is being sent, which is where most debugging happens. It starts closed,
 since it is a debug panel rather than part of the tool.
+
+[`CLAUDE.md`](CLAUDE.md) is the guide to the codebase itself.
 
 ## Writing an interface
 
@@ -112,8 +131,10 @@ interface…** scaffolds a named folder ready to edit, and the recent-workspaces
 picker keeps one workspace per project. The app watches the folder, so saving a file reloads the
 interface with the pucks left where they were.
 
-See [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md) for packaging, code signing,
-and what a first-time user has to click past.
+See [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md) for packaging and code
+signing, [`docs/RUNNERS.md`](docs/RUNNERS.md) for how releases are built, and
+[`docs/GETTING-STARTED.md`](docs/GETTING-STARTED.md) for what a designer actually
+does with it.
 
 ## Embedding it in a page
 
@@ -136,7 +157,7 @@ decision that matters.
 | `examples/<id>/`        | Example interfaces. Seeded into a fresh workspace.                |
 | `electron/`             | The desktop shell: custom protocol, workspace, file watching.      |
 | `scripts/`              | Workspace seed assembly, ad-hoc signing, the smoke test, web packaging. |
-| `docs/`                 | API reference, design rules, wire protocol, distribution.          |
+| `docs/`                 | Getting started, API reference, design rules, protocol, distribution. |
 
 ## Scripts
 

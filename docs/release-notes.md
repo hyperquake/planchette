@@ -24,6 +24,25 @@ then **Run anyway**.
 ## First run
 
 Planchette creates a workspace at `~/Documents/Planchette` (Windows:
-`Documents\Planchette`) holding example interfaces, the API reference, and the
-design rules. Edit anything in there and the app reloads it, keeping your pucks
-where they were. **File > New interface…** scaffolds a folder ready to edit.
+`Documents\Planchette`) holding four example interfaces, the API reference, and
+the design rules. Everything in the **App** menu comes from that folder.
+
+## Making your own, with an agent
+
+**File > New interface…** scaffolds a folder with starter files. Then open that
+folder in Claude Code, or whatever coding agent you use, and describe what you
+want:
+
+    make a puck that scrubs through a video, with the timeline
+    under the puck and a filmstrip along it
+
+You do not need to explain the table, the units, or the puck API. The workspace
+already carries the SDK reference, the design rules, type declarations, and a
+skill that fires when you mention pucks or a table, so an agent opened on that
+folder starts with everything it needs.
+
+Save a file and the app reloads it, keeping your pucks where they were.
+
+`GETTING-STARTED.md` in the repository has the full walkthrough, and
+`DESIGN-RULES.md` in your workspace has the handful of rules that decide whether
+an interface works on a real table.
