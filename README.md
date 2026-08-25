@@ -198,4 +198,5 @@ rewrite. No bridge is built yet.
 
 ## License
 
-MIT. See [`LICENSE`](LICENSE).
+MIT. See [`LICENSE`](LICENSE). Changes are recorded in
+[`CHANGELOG.md`](CHANGELOG.md).
