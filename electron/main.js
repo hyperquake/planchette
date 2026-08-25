@@ -52,6 +52,21 @@ protocol.registerSchemesAsPrivileged([
   },
 ])
 
+/**
+ * The one window, held at module scope.
+ *
+ * It is not enough to pass the window into the things that need it. On macOS
+ * closing the window does not quit, and `activate` builds a new one, so anything
+ * that captured the old window would go on talking to a destroyed object. Worse,
+ * anything registered per-window would be registered twice; see registerIpc.
+ */
+let mainWindow = null
+
+/** Send to the renderer, if there still is one. */
+function send(channel, ...args) {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, ...args)
+}
+
 /* ------------------------------------------------------------------ *
  * Settings and workspace
  * ------------------------------------------------------------------ */
@@ -110,11 +125,11 @@ function rememberWorkspace(dir) {
  * Switch to a workspace: seed it if it is empty, remember it, and re-point the
  * watcher. Returns the list the renderer needs to redraw its picker.
  */
-async function useWorkspace(dir, win) {
+async function useWorkspace(dir) {
   workspace = dir
   await ensureWorkspace()
   rememberWorkspace(dir)
-  if (win) watchWorkspace(win)
+  watchWorkspace()
   return { current: workspace, recent: reachableWorkspaces() }
 }
 
@@ -376,7 +391,7 @@ let watcher = null
  * iframe. Built-in fs.watch is enough here: recursive mode is supported on both
  * macOS and Windows, which keeps the packaged app free of runtime dependencies.
  */
-function watchWorkspace(win) {
+function watchWorkspace() {
   watcher?.close()
   watcher = null
   let timer = null
@@ -390,7 +405,7 @@ function watchWorkspace(win) {
       }
       clearTimeout(timer)
       timer = setTimeout(() => {
-        if (!win.isDestroyed()) win.webContents.send('apps:changed', lastApp)
+        send('apps:changed', lastApp)
         lastApp = null
       }, 150)
     })
@@ -462,7 +477,13 @@ function slugify(name) {
     .slice(0, 48)
 }
 
-function registerIpc(win) {
+/**
+ * Registered once for the process, not once per window: ipcMain.handle throws on
+ * a second registration for the same channel, and on macOS a window can be
+ * closed and rebuilt. Doing this per window meant that reopening from the dock
+ * threw before loadURL ever ran, leaving a permanently blank window.
+ */
+function registerIpc() {
   ipcMain.handle('apps:list', () => listApps())
 
   /**
@@ -495,7 +516,7 @@ function registerIpc(win) {
     } catch {
       throw new Error(`That folder is no longer there:\n${dir}`)
     }
-    return useWorkspace(dir, win)
+    return useWorkspace(dir)
   })
 
   ipcMain.handle('workspace:forget', (_e, dir) => {
@@ -509,13 +530,13 @@ function registerIpc(win) {
   })
 
   ipcMain.handle('workspace:choose', async () => {
-    const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
       title: 'Choose a workspace folder',
       properties: ['openDirectory', 'createDirectory'],
       defaultPath: workspace,
     })
     if (canceled || !filePaths[0]) return null
-    return useWorkspace(filePaths[0], win)
+    return useWorkspace(filePaths[0])
   })
 
   ipcMain.handle('interface:create', async (_e, rawName) => {
@@ -565,14 +586,14 @@ function devIcon() {
   return cachedDevIcon
 }
 
-function buildMenu(win) {
+function buildMenu() {
   const isMac = process.platform === 'darwin'
   const appMenu = {
     label: app.name,
     submenu: [
-      { label: `About ${app.name}`, click: () => win.webContents.send('app:about') },
+      { label: `About ${app.name}`, click: () => send('app:about') },
       { type: 'separator' },
-      { label: 'Settings…', accelerator: 'CmdOrCtrl+,', click: () => win.webContents.send('app:settings') },
+      { label: 'Settings…', accelerator: 'CmdOrCtrl+,', click: () => send('app:settings') },
       { type: 'separator' },
       { role: 'services' },
       { type: 'separator' },
@@ -594,7 +615,7 @@ function buildMenu(win) {
           // dialog: naming a folder needs a text input, and Electron has no prompt.
           label: 'New Interface…',
           accelerator: 'CmdOrCtrl+N',
-          click: () => win.webContents.send('app:new-interface'),
+          click: () => send('app:new-interface'),
         },
         { type: 'separator' },
         {
@@ -604,17 +625,17 @@ function buildMenu(win) {
         },
         {
           label: 'Add Workspace…',
-          click: () => win.webContents.send('app:choose-workspace'),
+          click: () => send('app:choose-workspace'),
         },
         {
           label: 'Forget This Workspace',
-          click: () => win.webContents.send('app:forget-workspace'),
+          click: () => send('app:forget-workspace'),
         },
         ...(isMac
           ? []
           : [
               { type: 'separator' },
-              { label: 'Settings…', accelerator: 'CmdOrCtrl+,', click: () => win.webContents.send('app:settings') },
+              { label: 'Settings…', accelerator: 'CmdOrCtrl+,', click: () => send('app:settings') },
             ]),
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' },
@@ -627,18 +648,18 @@ function buildMenu(win) {
         {
           label: 'Reload App',
           accelerator: 'CmdOrCtrl+R',
-          click: () => win.webContents.send('app:reload'),
+          click: () => send('app:reload'),
         },
         {
           label: 'Reload Simulator',
           accelerator: 'CmdOrCtrl+Shift+R',
-          click: () => win.webContents.reload(),
+          click: () => mainWindow?.webContents.reload(),
         },
         { type: 'separator' },
         {
           label: 'Toggle Inspector',
           accelerator: 'CmdOrCtrl+I',
-          click: () => win.webContents.send('app:toggle-inspector'),
+          click: () => send('app:toggle-inspector'),
         },
         { type: 'separator' },
         { role: 'toggleDevTools' },
@@ -680,10 +701,14 @@ async function createWindow() {
     },
   })
 
+  mainWindow = win
+  win.on('closed', () => {
+    if (mainWindow === win) mainWindow = null
+  })
+
   win.once('ready-to-show', () => win.show())
-  registerIpc(win)
-  buildMenu(win)
-  watchWorkspace(win)
+  buildMenu()
+  watchWorkspace()
 
   // Designer apps are local files, but never let one navigate the shell or spawn
   // windows of its own.
@@ -736,6 +761,7 @@ app.whenReady().then(async () => {
   // Do not record a dev run or an override: neither is a choice the user made.
   if (!DEV_URL && !WORKSPACE_OVERRIDE) rememberWorkspace(workspace)
   registerProtocol()
+  registerIpc()
 
   // macOS reads the dock icon from the bundle, which an unpackaged run has not
   // got, so set it explicitly. Once, not per window.
