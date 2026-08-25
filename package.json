@@ -5,6 +5,15 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Simulator for a multitouch table with tangible pucks, plus an SDK for designer-authored HTML interfaces.",
+  "author": "Hyperquake",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Potion/planchette.git"
+  },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "vite",
     "clean": "node scripts/clean.mjs",
