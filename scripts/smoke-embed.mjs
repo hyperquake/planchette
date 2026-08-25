@@ -213,7 +213,10 @@ try {
 
   const scale = Number(String(state?.transform).match(/matrix\(([\d.]+)/)?.[1] ?? 0)
   check('crop zoom applied', Math.abs(scale - ZOOM) < 0.005, `scale ${scale}`)
-  check('cropped embed is positioned, not scrolled', state?.sizerPosition === 'absolute' && state?.stageOverflow === 'hidden')
+  check(
+    'cropped embed is positioned, not scrolled',
+    state?.sizerPosition === 'absolute' && state?.stageOverflow === 'hidden',
+  )
 
   /* ---- the interface actually rendered, content and all ---- */
 

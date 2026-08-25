@@ -73,13 +73,7 @@ export interface TableState {
   t: number
 }
 
-export type TableEventName =
-  | 'puckadd'
-  | 'puckmove'
-  | 'puckremove'
-  | 'touchstart'
-  | 'touchmove'
-  | 'touchend'
+export type TableEventName = 'puckadd' | 'puckmove' | 'puckremove' | 'touchstart' | 'touchmove' | 'touchend'
 
 export interface TableEventMap {
   puckadd: Puck

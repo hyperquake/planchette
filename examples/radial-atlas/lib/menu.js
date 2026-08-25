@@ -131,9 +131,7 @@ export class RadialMenu {
       // Only the deepest visible ring follows the pointer. Parent rings hold
       // the choice already made, which is what keeps the trail readable.
       const isActive = ring.level === depth
-      const index = isActive
-        ? Math.round((puck.angle / TAU) * count) % count
-        : (menu.path[ring.level] ?? 0)
+      const index = isActive ? Math.round((puck.angle / TAU) * count) % count : (menu.path[ring.level] ?? 0)
       menu.highlight[ring.level] = index
 
       for (let i = 0; i < ring.cells.length; i++) {
@@ -179,9 +177,7 @@ export class RadialMenu {
       // angle right now rather than from anything the render loop cached.
       const count = ring.items.length
       const index =
-        ring.level === menu.path.length
-          ? Math.round((puck.angle / TAU) * count) % count
-          : menu.path[ring.level]
+        ring.level === menu.path.length ? Math.round((puck.angle / TAU) * count) % count : menu.path[ring.level]
 
       if (ring.level === 0 && RINGS.length > 1) {
         menu.path = [index]

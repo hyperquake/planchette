@@ -142,8 +142,7 @@ function loop(now) {
     // Put the readout on the puck's south side and rotate it to match the puck,
     // so it faces whoever is holding it. Users sit on all four sides.
     const rr = RING_MM + 34
-    d.readout.style.transform =
-      `translate(${table.mm(-Math.sin(p.angle) * rr)}px, ${table.mm(Math.cos(p.angle) * rr)}px) rotate(${p.angle}rad)`
+    d.readout.style.transform = `translate(${table.mm(-Math.sin(p.angle) * rr)}px, ${table.mm(Math.cos(p.angle) * rr)}px) rotate(${p.angle}rad)`
     d.readout.innerHTML =
       d.confirmed === null
         ? `marker ${p.markerId} &middot; ${Math.round(table.deg(p.angle))}&deg; &middot; touch ring to set`

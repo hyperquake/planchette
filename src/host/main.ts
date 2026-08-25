@@ -200,11 +200,17 @@ function selectApp(appId: string): void {
   frame.load(appId)
 }
 
-installSimApi(model, frame, () => appList, selectApp, (on) => {
-  prefs.inspector = on
-  savePrefs()
-  applyInspector()
-})
+installSimApi(
+  model,
+  frame,
+  () => appList,
+  selectApp,
+  (on) => {
+    prefs.inspector = on
+    savePrefs()
+    applyInspector()
+  },
+)
 
 /* ---------------- zoom ---------------- */
 
@@ -260,7 +266,10 @@ async function refreshApps(force = false): Promise<void> {
     return
   }
 
-  setOptions(appSelect, appList.map((a) => ({ value: a, label: a })))
+  setOptions(
+    appSelect,
+    appList.map((a) => ({ value: a, label: a })),
+  )
   if (!appList.includes(prefs.app)) {
     prefs.app = appList.includes('dial-demo') ? 'dial-demo' : appList[0]!
     savePrefs()
@@ -318,7 +327,11 @@ async function setupWorkspace(): Promise<void> {
     nameEl.hidden = many
 
     nameEl.textContent = basename(list.current)
-    setOptions(select, paths.map((p) => ({ value: p, label: basename(p) })), list.current)
+    setOptions(
+      select,
+      paths.map((p) => ({ value: p, label: basename(p) })),
+      list.current,
+    )
     pathEl.textContent = list.current
     pathEl.title = list.current
   }
@@ -442,7 +455,10 @@ function setupAbout(): void {
 /* ---------------- controls ---------------- */
 
 const surfaceSelect = $<HTMLSelectElement>('#surface-select')
-setOptions(surfaceSelect, PRESETS.map((p) => ({ value: p.id, label: p.label })))
+setOptions(
+  surfaceSelect,
+  PRESETS.map((p) => ({ value: p.id, label: p.label })),
+)
 surfaceSelect.value = prefs.surface
 surfaceSelect.addEventListener('change', () => {
   prefs.surface = surfaceSelect.value

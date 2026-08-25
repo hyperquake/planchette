@@ -21,7 +21,10 @@ export class Inspector {
   private rows = 0
   private lastTables = 0
 
-  constructor(root: HTMLElement, private model: TableModel) {
+  constructor(
+    root: HTMLElement,
+    private model: TableModel,
+  ) {
     this.logEl = root.querySelector('#log')!
     this.puckBody = root.querySelector('#puck-rows')!
     this.touchBody = root.querySelector('#touch-rows')!

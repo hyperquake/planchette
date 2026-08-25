@@ -1,4 +1,12 @@
-import { PROTOCOL_VERSION, type HostMessage, type Puck, type SurfaceInfo, type TableEventName, type TableState, type Touch } from './types'
+import {
+  PROTOCOL_VERSION,
+  type HostMessage,
+  type Puck,
+  type SurfaceInfo,
+  type TableEventName,
+  type TableState,
+  type Touch,
+} from './types'
 import { clamp01, nearestEdge, wrapAngle } from './units'
 
 export const SDK_VERSION = '0.1.0'
@@ -125,13 +133,31 @@ function startSolo(sink: Sink): void {
     const o = from.get(id)
     if (!o) return
     const d = decorate(o, s)
-    sink.event(name, name.startsWith('puck') ? (d as Puck) : ({ ...d, edge: nearestEdge(d.mmX, d.mmY, s.widthMm, s.heightMm) } as Touch))
+    sink.event(
+      name,
+      name.startsWith('puck')
+        ? (d as Puck)
+        : ({ ...d, edge: nearestEdge(d.mmX, d.mmY, s.widthMm, s.heightMm) } as Touch),
+    )
   }
 
   function addPuck(x: number, y: number): void {
     const id = nextId++
     const now = performance.now()
-    pucks.set(id, { id, markerId: pucks.size + 1, x, y, angle: 0, vx: 0, vy: 0, vAngle: 0, mmX: 0, mmY: 0, firstSeen: now, lastSeen: now })
+    pucks.set(id, {
+      id,
+      markerId: pucks.size + 1,
+      x,
+      y,
+      angle: 0,
+      vx: 0,
+      vy: 0,
+      vAngle: 0,
+      mmX: 0,
+      mmY: 0,
+      firstSeen: now,
+      lastSeen: now,
+    })
 
     const el = document.createElement('div')
     el.className = 'table-solo-puck'
@@ -178,7 +204,17 @@ function startSolo(sink: Sink): void {
     if ((ev.target as HTMLElement | null)?.closest('.table-solo-puck')) return
     const id = nextId++
     const now = performance.now()
-    touches.set(id, { id, x: clamp01(ev.clientX / window.innerWidth), y: clamp01(ev.clientY / window.innerHeight), radiusMm: 8, mmX: 0, mmY: 0, edge: 'n', firstSeen: now, lastSeen: now })
+    touches.set(id, {
+      id,
+      x: clamp01(ev.clientX / window.innerWidth),
+      y: clamp01(ev.clientY / window.innerHeight),
+      radiusMm: 8,
+      mmX: 0,
+      mmY: 0,
+      edge: 'n',
+      firstSeen: now,
+      lastSeen: now,
+    })
     dirty = true
     pub('touchstart', id, touches)
 
@@ -251,4 +287,3 @@ function startSolo(sink: Sink): void {
   }
   requestAnimationFrame(frame)
 }
-
