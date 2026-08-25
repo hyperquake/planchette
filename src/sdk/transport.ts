@@ -1,5 +1,5 @@
 import { PROTOCOL_VERSION, type HostMessage, type Puck, type SurfaceInfo, type TableEventName, type TableState, type Touch } from './types'
-import { nearestEdge, wrapAngle } from './units'
+import { clamp01, nearestEdge, wrapAngle } from './units'
 
 export const SDK_VERSION = '0.1.0'
 
@@ -252,6 +252,3 @@ function startSolo(sink: Sink): void {
   requestAnimationFrame(frame)
 }
 
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v
-}

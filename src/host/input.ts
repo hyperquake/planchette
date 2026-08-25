@@ -1,5 +1,5 @@
 import type { TableModel } from './model'
-import { wrapAngle } from '../sdk/units'
+import { angleDelta, clamp, wrapAngle } from '../sdk/units'
 
 export interface InputHooks {
   /** Marker ID to stamp on newly created pucks. */
@@ -125,9 +125,7 @@ export function installInput(surfaceEl: HTMLElement, model: TableModel, hooks: I
       const c = puckCenterClient(d.id)
       if (!c) return
       const a = Math.atan2(ev.clientY - c.y, ev.clientX - c.x)
-      let delta = a - d.last
-      if (delta > Math.PI) delta -= Math.PI * 2
-      if (delta < -Math.PI) delta += Math.PI * 2
+      const delta = angleDelta(d.last, a)
       d.last = a
       const p = model.rawPucks().get(d.id)
       if (p) model.movePuck(d.id, { angle: wrapAngle(p.angle + delta) })
@@ -264,6 +262,3 @@ function nearestPuckId(model: TableModel, at: { x: number; y: number }): number 
   return best
 }
 
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v
-}
