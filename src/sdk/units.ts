@@ -42,3 +42,17 @@ export function nearestEdge(mmX: number, mmY: number, widthMm: number, heightMm:
   for (const k of ['s', 'w', 'e'] as const) if (d[k] < d[best]) best = k
   return best
 }
+
+/**
+ * Shared by the model, the input layer, and solo mode, all of which had their
+ * own copy. Not re-exported from index.ts: this is a shared implementation
+ * detail, not part of what an interface gets.
+ */
+export function clamp(v: number, lo: number, hi: number): number {
+  return v < lo ? lo : v > hi ? hi : v
+}
+
+/** Normalized coordinates never leave the surface. */
+export function clamp01(v: number): number {
+  return clamp(v, 0, 1)
+}

@@ -1,5 +1,5 @@
 import type { Puck, SurfaceInfo, TableEventName, TableState, Touch } from '../sdk/types'
-import { nearestEdge, wrapAngle } from '../sdk/units'
+import { angleDelta, clamp01, nearestEdge, wrapAngle } from '../sdk/units'
 
 /** Internal record. Public Puck/Touch shapes add the derived millimetre fields. */
 interface PuckRec {
@@ -121,10 +121,7 @@ export class TableModel {
     }
     if (opts.angle !== undefined) {
       const na = wrapAngle(opts.angle)
-      let d = na - p.angle
-      if (d > Math.PI) d -= Math.PI * 2
-      if (d < -Math.PI) d += Math.PI * 2
-      p.vAngle = lerp(p.vAngle, d / dt, VELOCITY_SMOOTHING)
+      p.vAngle = lerp(p.vAngle, angleDelta(p.angle, na) / dt, VELOCITY_SMOOTHING)
       p.angle = na
     }
     p.lastSeen = now
@@ -239,10 +236,6 @@ export class TableModel {
       touches: this.touchIds().map((id) => this.publicTouch(id)!),
     }
   }
-}
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v
 }
 
 function lerp(a: number, b: number, t: number): number {
