@@ -23,6 +23,9 @@
     "pack:web": "node scripts/pack-web.mjs",
     "preview": "vite preview",
     "check": "tsc --noEmit",
+    "lint": "oxlint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "electron:dev": "electron . --dev-url=http://localhost:5173",
     "prepackage": "npm run build && npm run build:seed",
     "dist": "npm run prepackage && electron-builder",
@@ -36,6 +39,8 @@
     "@types/three": "^0.185.4",
     "electron": "^43.4.1",
     "electron-builder": "^26.15.3",
+    "oxlint": "^1.80.0",
+    "prettier": "^3.9.6",
     "three": "^0.185.1",
     "typescript": "^7.0.2",
     "vite": "^8.2.2"

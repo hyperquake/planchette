@@ -1,0 +1,20 @@
+node_modules
+dist
+dist-types
+dist-embed-test
+workspace-seed
+release
+package-lock.json
+
+# Prose is hand-wrapped, and the reasoning in it is worth more than uniform line
+# breaks.
+*.md
+
+# CSS here is written a rule per line on purpose, and the host UI's stylesheet
+# lives inside index.html. Prettier would turn 300 readable lines into 600.
+*.html
+*.css
+
+# Generated from geometry by brand/tools/make-icons.py rather than hand-edited.
+brand/*.svg
+public/favicon.svg

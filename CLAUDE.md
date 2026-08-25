@@ -6,6 +6,8 @@ and [`docs/API.md`](docs/API.md) instead; almost nothing here applies to that.
 
     npm run dev      # http://localhost:5173
     npm run check    # TypeScript
+    npm run lint     # oxlint, and the only static checking electron/ gets
+    npm run format   # prettier, code only: prose, html and css are hand-formatted
     npm run smoke    # launches the real desktop shell and drives it over CDP
 
 ## Shape of the thing

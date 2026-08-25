@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error"
+  },
+  "env": { "browser": true, "es2024": true, "node": true },
+  "rules": {
+    // TableModel.emit and the SDK's event dispatch iterate over a copy on
+    // purpose, so that a listener unsubscribing mid-dispatch cannot change what
+    // the loop still has to visit. The rule reads that as a pointless spread.
+    "unicorn/no-useless-spread": "off"
+  },
+  "ignorePatterns": ["dist", "dist-types", "dist-embed-test", "workspace-seed", "release", "node_modules"]
+}
