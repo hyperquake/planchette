@@ -381,7 +381,7 @@ async function serveAppHtml(file, extra = {}) {
       (whole, open, body, close) => {
         try {
           const parsed = JSON.parse(body)
-          parsed.imports = { ...PROVIDED, ...(parsed.imports ?? {}) }
+          parsed.imports = { ...PROVIDED, ...parsed.imports }
           return `${open}${JSON.stringify(parsed)}${close}`
         } catch {
           return whole

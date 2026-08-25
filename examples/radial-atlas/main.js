@@ -35,7 +35,6 @@ const plateMeta = document.getElementById('plate-meta')
 const statusEl = document.getElementById('status')
 
 let menu = null
-let loadedCount = 0
 
 /** Preload so a plate appears the instant it is chosen, not a beat later. */
 function preload(content) {
@@ -60,7 +59,6 @@ function showPlate(item, markerId) {
   plate.style.animation = 'none'
   void plate.offsetWidth
   plate.style.animation = ''
-  loadedCount++
 }
 
 table.ready(async ({ surface }) => {
