@@ -15,6 +15,20 @@ const $ = <T extends HTMLElement = HTMLElement>(sel: string): T => {
   return el
 }
 
+/**
+ * Refill a select. Text rather than markup, because two of the three callers are
+ * filling it with strings off the user's disk: interface folder names and
+ * workspace paths. Interpolating those into innerHTML lets a folder called
+ * `"><img onerror=...>` run script in the document that holds the bridge.
+ */
+function setOptions(
+  select: HTMLSelectElement,
+  items: Array<{ value: string; label: string }>,
+  selected?: string,
+): void {
+  select.replaceChildren(...items.map((o) => new Option(o.label, o.value, false, o.value === selected)))
+}
+
 /* ---------------- embed mode ---------------- */
 
 /**
@@ -242,11 +256,11 @@ async function refreshApps(force = false): Promise<void> {
   appList = await appSource.list()
 
   if (!appList.length) {
-    appSelect.innerHTML = '<option value="">no apps found</option>'
+    setOptions(appSelect, [{ value: '', label: 'no apps found' }])
     return
   }
 
-  appSelect.innerHTML = appList.map((a) => `<option value="${a}">${a}</option>`).join('')
+  setOptions(appSelect, appList.map((a) => ({ value: a, label: a })))
   if (!appList.includes(prefs.app)) {
     prefs.app = appList.includes('dial-demo') ? 'dial-demo' : appList[0]!
     savePrefs()
@@ -304,9 +318,7 @@ async function setupWorkspace(): Promise<void> {
     nameEl.hidden = many
 
     nameEl.textContent = basename(list.current)
-    select.innerHTML = paths
-      .map((p) => `<option value="${p}"${p === list.current ? ' selected' : ''}>${basename(p)}</option>`)
-      .join('')
+    setOptions(select, paths.map((p) => ({ value: p, label: basename(p) })), list.current)
     pathEl.textContent = list.current
     pathEl.title = list.current
   }
@@ -411,7 +423,10 @@ function setupAbout(): void {
 
   // Both marks come from brand/, so there is one source of truth for the
   // artwork and no hand-drawn copy to drift.
-  open.innerHTML = `<img src="${markUrl}" alt="">`
+  const mark = new Image()
+  mark.src = markUrl
+  mark.alt = ''
+  open.replaceChildren(mark)
   $<HTMLImageElement>('#about-lockup').src = lockupUrl
   $('#about-version').textContent = __APP_VERSION__
 
@@ -427,7 +442,7 @@ function setupAbout(): void {
 /* ---------------- controls ---------------- */
 
 const surfaceSelect = $<HTMLSelectElement>('#surface-select')
-surfaceSelect.innerHTML = PRESETS.map((p) => `<option value="${p.id}">${p.label}</option>`).join('')
+setOptions(surfaceSelect, PRESETS.map((p) => ({ value: p.id, label: p.label })))
 surfaceSelect.value = prefs.surface
 surfaceSelect.addEventListener('change', () => {
   prefs.surface = surfaceSelect.value

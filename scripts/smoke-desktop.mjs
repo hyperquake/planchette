@@ -400,6 +400,36 @@ try {
   check('pucks survive the reload and the app rebuilds', survived?.pucks === 1 && survived?.dials === 1, JSON.stringify(survived))
 
   /**
+   * A folder name that is markup.
+   *
+   * The picker is filled from folder names on disk, and a designer can name a
+   * folder anything the filesystem allows using Finder. Skipped on Windows, where
+   * angle brackets are not legal in a path and this cannot arise.
+   */
+  if (process.platform !== 'win32') {
+    const payload = '<img src=x onerror=window.__injected=1>'
+    await fs.mkdir(path.join(workspace, payload), { recursive: true })
+    await fs.writeFile(path.join(workspace, payload, 'index.html'), '<!doctype html><title>x</title>')
+
+    const picker = await evaluate(`
+      const sel = document.getElementById('app-select');
+      const wanted = ${JSON.stringify(payload)};
+      for (let i = 0; i < 80; i++) {
+        if ([...sel.options].some(o => o.value === wanted)) break;
+        await new Promise(r => setTimeout(r, 100));
+      }
+      const opt = [...sel.options].find(o => o.value === wanted);
+      return { listed: Boolean(opt), text: opt?.textContent, injected: window.__injected ?? null, imgs: document.querySelectorAll('#app-select img').length };
+    `)
+    check(
+      'a folder named like markup stays text',
+      picker?.listed && picker.text === payload && picker.injected === null && picker.imgs === 0,
+      JSON.stringify(picker),
+    )
+    await fs.rm(path.join(workspace, payload), { recursive: true, force: true })
+  }
+
+  /**
    * An interface trying to steer the shell.
    *
    * Interfaces share this origin on purpose, so window.top is reachable from
