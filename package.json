@@ -6,7 +6,7 @@
   "type": "module",
   "description": "Simulator for a multitouch table with tangible pucks, plus an SDK for designer-authored HTML interfaces.",
   "author": "Hyperquake",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Potion/planchette.git"

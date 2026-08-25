@@ -10,7 +10,7 @@
  * Windows, and node refuses to spawn a .cmd without a shell.
  */
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, readFileSync, rmSync } from 'node:fs'
+import { copyFileSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { build } from 'vite'
 
 const { version } = JSON.parse(readFileSync('package.json', 'utf8'))
@@ -22,6 +22,10 @@ process.env.PLANCHETTE_BASE = './'
 for (const configFile of ['vite.config.ts', 'vite.sdk.config.ts', 'vite.vendor.config.ts']) {
   await build({ configFile, logLevel: 'warn' })
 }
+
+// Same reason as the desktop bundle: MIT wants the notice to travel with the
+// copy, and this zip is what a site actually serves.
+copyFileSync('LICENSE', 'dist/LICENSE')
 
 mkdirSync('release', { recursive: true })
 rmSync(`release/${artifact}`, { force: true })
