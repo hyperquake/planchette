@@ -234,6 +234,42 @@ const MIME = {
   '.flac': 'audio/flac',
 }
 
+/**
+ * Sent with the host UI, and deliberately not with a designer's interface.
+ *
+ * An interface is meant to run whatever inline script its author wrote in its own
+ * folder, so one policy covering both would break the product. Scoping it to the
+ * shell still buys the thing that matters: the shell is what holds the preload
+ * bridge, and `script-src 'self'` means nothing injected into that document runs.
+ *
+ * `style-src` needs 'unsafe-inline' only for the host UI's own <style> block in
+ * index.html. Moving that into a stylesheet would let this tighten.
+ *
+ * Dev runs load from Vite over http and never reach this handler, so HMR is
+ * unaffected.
+ */
+const HOST_CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "frame-src 'self'",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "form-action 'none'",
+].join('; ')
+
+/**
+ * Workspace files are edited while the app is running, so nothing about them may
+ * be cached. The watcher's reload works today, but only because a response with
+ * no validators happens to be treated as stale; saying so outright removes a
+ * whole class of "my edit did not show up". Bundle assets under dist/ are hashed
+ * and deliberately not covered.
+ */
+const NO_STORE = { 'Cache-Control': 'no-store' }
+
 /** Join under a root, refusing anything that escapes it. */
 function safeJoin(root, ...parts) {
   const target = path.resolve(root, ...parts)
@@ -271,7 +307,7 @@ function parseRange(header, size) {
  * which on a 692MB video produced a decode error rather than an honest failure.
  * Streaming also means a large asset no longer costs its own size in RAM.
  */
-async function serveFile(file, request) {
+async function serveFile(file, request, extra = {}) {
   if (!file) return notFound()
 
   let size
@@ -301,6 +337,7 @@ async function serveFile(file, request) {
         'Content-Length': String(range.end - range.start + 1),
         'Content-Range': `bytes ${range.start}-${range.end}/${size}`,
         'Accept-Ranges': 'bytes',
+        ...extra,
       },
     })
   }
@@ -309,7 +346,7 @@ async function serveFile(file, request) {
   // never try to seek.
   return new Response(Readable.toWeb(fs.createReadStream(file)), {
     status: 200,
-    headers: { 'Content-Type': type, 'Content-Length': String(size), 'Accept-Ranges': 'bytes' },
+    headers: { 'Content-Type': type, 'Content-Length': String(size), 'Accept-Ranges': 'bytes', ...extra },
   })
 }
 
@@ -330,7 +367,7 @@ const IMPORT_MAP = `<script type="importmap">${JSON.stringify({ imports: PROVIDE
  * A document may only have one import map, so if the designer wrote their own we
  * merge into it and let their mapping win.
  */
-async function serveAppHtml(file) {
+async function serveAppHtml(file, extra = {}) {
   let html
   try {
     html = await fsp.readFile(file, 'utf8')
@@ -357,7 +394,7 @@ async function serveAppHtml(file) {
     html = IMPORT_MAP + html
   }
 
-  return new Response(html, { headers: { 'Content-Type': 'text/html' } })
+  return new Response(html, { headers: { 'Content-Type': 'text/html', ...extra } })
 }
 
 function registerProtocol() {
@@ -372,11 +409,15 @@ function registerProtocol() {
       const [, appId, rest] = match
       const file = safeJoin(workspace, appId, rest || 'index.html')
       if (!file) return notFound()
-      return file.toLowerCase().endsWith('.html') ? serveAppHtml(file) : serveFile(file, request)
+      return file.toLowerCase().endsWith('.html')
+        ? serveAppHtml(file, NO_STORE)
+        : serveFile(file, request, NO_STORE)
     }
 
     // Everything else is the host UI bundle.
-    return serveFile(safeJoin(DIST, pathname === '/' ? 'index.html' : pathname.replace(/^\//, '')), request)
+    const file = safeJoin(DIST, pathname === '/' ? 'index.html' : pathname.replace(/^\//, ''))
+    const isDocument = !file || file.toLowerCase().endsWith('.html')
+    return serveFile(file, request, isDocument ? { 'Content-Security-Policy': HOST_CSP } : {})
   })
 }
 
@@ -717,6 +758,13 @@ async function createWindow() {
     return { action: 'deny' }
   })
 
+  // The other half of that. Interfaces share this origin on purpose, so one can
+  // reach window.top and steer the whole shell somewhere with no way back. Only
+  // fires for top-level navigation, so swapping the app iframe's src is untouched.
+  win.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith(DEV_URL ?? `${ORIGIN}/`)) event.preventDefault()
+  })
+
   await win.loadURL(DEV_URL ?? `${ORIGIN}/`)
   return win
 }
@@ -747,11 +795,33 @@ function startupWorkspace() {
   return path.join(app.getPath('documents'), 'Planchette')
 }
 
+/**
+ * One instance per settings store. Two copies race on settings.json, each
+ * overwriting the other's idea of the current workspace, and both watch the same
+ * folder. The lock is keyed on userData, so a run with its own --user-data-dir
+ * (the smoke test) is unaffected.
+ */
+const isPrimaryInstance = app.requestSingleInstanceLock()
+if (!isPrimaryInstance) app.quit()
+
+app.on('second-instance', () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  mainWindow.focus()
+})
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
+app.on('before-quit', () => {
+  watcher?.close()
+  watcher = null
+})
+
 app.whenReady().then(async () => {
+  if (!isPrimaryInstance) return
+
   // In dev the host UI is served by Vite from the repo, so point the workspace at
   // the repo's own apps folder; otherwise the app list and the URLs would
   // disagree about which apps exist.

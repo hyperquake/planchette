@@ -227,6 +227,32 @@ try {
   const escape = await evaluate("const r = await fetch('/workspace/dial-demo/../../../../etc/passwd'); return r.status")
   check('path traversal blocked', escape === 404, `status ${escape}`)
 
+  // The shell document is locked down; a designer's interface deliberately is
+  // not, because interfaces are meant to run their author's own inline script.
+  // The split is the point, so assert both halves of it.
+  const policy = await evaluate(`
+    const host = await fetch('/index.html');
+    const app = await fetch('/workspace/dial-demo/index.html');
+    const asset = await fetch('/workspace/dial-demo/main.js');
+    return {
+      host: host.headers.get('content-security-policy'),
+      app: app.headers.get('content-security-policy'),
+      appCache: app.headers.get('cache-control'),
+      assetCache: asset.headers.get('cache-control'),
+    };
+  `)
+  check(
+    'host document carries a CSP',
+    String(policy?.host).includes("script-src 'self'") && String(policy?.host).includes("object-src 'none'"),
+    String(policy?.host ?? 'absent').slice(0, 60),
+  )
+  check('interfaces are not policed by it', policy?.app === null, String(policy?.app ?? 'absent'))
+  check(
+    'workspace files are never cached',
+    policy?.appCache === 'no-store' && policy?.assetCache === 'no-store',
+    `html ${policy?.appCache} / js ${policy?.assetCache}`,
+  )
+
   // Workspace configuration lives in the settings dialog, which only appears in
   // the desktop build. The inspector is a debug panel and starts closed.
   const panel = await evaluate(`
@@ -244,6 +270,20 @@ try {
     panel?.workspacePath,
   )
   check('inspector closed by default', panel?.inspectorClosedByDefault === true)
+
+  // Both brand marks come from brand/ through Vite. Asserted because the CSP
+  // above governs img-src, and a policy that quietly blanks the about panel
+  // would otherwise go unnoticed: nothing throws, the artwork just vanishes.
+  const artwork = await evaluate(`
+    const imgs = [document.querySelector('#about-open img'), document.getElementById('about-lockup')];
+    await Promise.all(imgs.map(i => i && (i.complete || new Promise(r => { i.onload = r; i.onerror = r; }))));
+    return imgs.map(i => (i ? { src: String(i.getAttribute('src')).slice(0, 24), w: i.naturalWidth } : null));
+  `)
+  check(
+    'about panel artwork loads under the CSP',
+    Array.isArray(artwork) && artwork.length === 2 && artwork.every((i) => i && i.w > 0),
+    JSON.stringify(artwork),
+  )
   check('no leftover toolbar buttons', Array.isArray(panel?.strayButtons) && panel.strayButtons.length === 0, JSON.stringify(panel?.strayButtons))
 
   // The simulator itself works end to end inside the shell.
@@ -358,6 +398,27 @@ try {
     return { pucks: sim.state().pucks.length, dials: doc.querySelectorAll('.dial').length };
   `)
   check('pucks survive the reload and the app rebuilds', survived?.pucks === 1 && survived?.dials === 1, JSON.stringify(survived))
+
+  /**
+   * An interface trying to steer the shell.
+   *
+   * Interfaces share this origin on purpose, so window.top is reachable from
+   * inside the frame and nothing in the page can stop this; only the main process
+   * can. Uses a .invalid host so that a regression cannot reach the network, and
+   * runs second to last because a failure navigates the window away from
+   * everything above it.
+   */
+  const navigated = await evaluate(`
+    const before = location.href;
+    try { document.getElementById('appframe').contentWindow.top.location.href = 'https://steer.invalid/'; } catch {}
+    await new Promise(r => setTimeout(r, 1500));
+    return { before, after: location.href };
+  `).catch((err) => ({ before: 'threw', after: String(err) }))
+  check(
+    'an interface cannot navigate the shell away',
+    navigated?.after === navigated?.before && String(navigated?.after).startsWith(ORIGIN),
+    `${navigated?.before} -> ${navigated?.after}`,
+  )
 
   /**
    * Closing the window and reopening from the dock. Last, because it destroys the
