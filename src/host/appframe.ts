@@ -14,7 +14,10 @@ export class AppFrame {
   private connected = false
   currentApp: string | null = null
 
-  constructor(iframe: HTMLIFrameElement, private model: TableModel) {
+  constructor(
+    iframe: HTMLIFrameElement,
+    private model: TableModel,
+  ) {
     this.iframe = iframe
     window.addEventListener('message', this.onMessage)
     this.applySurface()

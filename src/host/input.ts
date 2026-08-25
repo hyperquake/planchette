@@ -261,4 +261,3 @@ function nearestPuckId(model: TableModel, at: { x: number; y: number }): number 
   }
   return best
 }
-

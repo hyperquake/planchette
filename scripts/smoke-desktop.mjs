@@ -131,7 +131,8 @@ const evaluate = (expression) => renderer.evaluate(expression)
  * is the way through to the electron module.
  */
 const mainProcess = debugClient()
-const inMain = (expression) => mainProcess.evaluate(`const { app, BrowserWindow } = process.mainModule.require('electron'); ${expression}`)
+const inMain = (expression) =>
+  mainProcess.evaluate(`const { app, BrowserWindow } = process.mainModule.require('electron'); ${expression}`)
 
 async function findMainTarget() {
   for (let i = 0; i < 60; i++) {
@@ -176,26 +177,54 @@ try {
 
   // The workspace was seeded from the bundle.
   const seeded = await fs.readdir(workspace)
-  check('workspace seeded on first run', seeded.includes('dial-demo') && seeded.includes('CLAUDE.md'), seeded.sort().join(', '))
+  check(
+    'workspace seeded on first run',
+    seeded.includes('dial-demo') && seeded.includes('CLAUDE.md'),
+    seeded.sort().join(', '),
+  )
 
   // The preload bridge is reachable and reports what it found on disk.
-  const bridge = await evaluate('return { version: window.planchette?.version, apps: await window.planchette?.listApps(), ws: await window.planchette?.workspacePath() }')
+  const bridge = await evaluate(
+    'return { version: window.planchette?.version, apps: await window.planchette?.listApps(), ws: await window.planchette?.workspacePath() }',
+  )
   check('preload bridge exposed', Boolean(bridge?.version), `electron ${bridge?.version}`)
-  check('apps listed from workspace', Array.isArray(bridge?.apps) && bridge.apps.includes('dial-demo'), JSON.stringify(bridge?.apps))
+  check(
+    'apps listed from workspace',
+    Array.isArray(bridge?.apps) && bridge.apps.includes('dial-demo'),
+    JSON.stringify(bridge?.apps),
+  )
   check('workspace path is the temp dir', bridge?.ws === workspace)
 
   // The host bundle and the standalone SDK are served.
-  const sdk = await evaluate("const r = await fetch('/sdk.js'); return { status: r.status, type: r.headers.get('content-type'), hasExport: (await r.text()).includes('export') }")
-  check('/sdk.js served as JavaScript', sdk?.status === 200 && sdk.type === 'text/javascript' && sdk.hasExport, `${sdk?.status} ${sdk?.type}`)
+  const sdk = await evaluate(
+    "const r = await fetch('/sdk.js'); return { status: r.status, type: r.headers.get('content-type'), hasExport: (await r.text()).includes('export') }",
+  )
+  check(
+    '/sdk.js served as JavaScript',
+    sdk?.status === 200 && sdk.type === 'text/javascript' && sdk.hasExport,
+    `${sdk?.status} ${sdk?.type}`,
+  )
 
   // Favicons come from public/, which Vite copies to the root of dist. Served
   // over the custom protocol they need the right MIME type, and that is the part
   // that can silently break once packaged.
-  const favicon = await evaluate("const r = await fetch('/favicon.svg'); return { status: r.status, type: r.headers.get('content-type') }")
-  check('favicon.svg served as image/svg+xml', favicon?.status === 200 && favicon.type === 'image/svg+xml', `${favicon?.status} ${favicon?.type}`)
+  const favicon = await evaluate(
+    "const r = await fetch('/favicon.svg'); return { status: r.status, type: r.headers.get('content-type') }",
+  )
+  check(
+    'favicon.svg served as image/svg+xml',
+    favicon?.status === 200 && favicon.type === 'image/svg+xml',
+    `${favicon?.status} ${favicon?.type}`,
+  )
 
-  const faviconIco = await evaluate("const r = await fetch('/favicon.ico'); return { status: r.status, type: r.headers.get('content-type') }")
-  check('favicon.ico served as image/x-icon', faviconIco?.status === 200 && faviconIco.type === 'image/x-icon', `${faviconIco?.status} ${faviconIco?.type}`)
+  const faviconIco = await evaluate(
+    "const r = await fetch('/favicon.ico'); return { status: r.status, type: r.headers.get('content-type') }",
+  )
+  check(
+    'favicon.ico served as image/x-icon',
+    faviconIco?.status === 200 && faviconIco.type === 'image/x-icon',
+    `${faviconIco?.status} ${faviconIco?.type}`,
+  )
 
   // Byte ranges. Chromium seeks media by asking for ranges, so without these a
   // video cannot be scrubbed, and a large file served whole fails as a decode
@@ -212,15 +241,26 @@ try {
   `)
   check(
     'byte ranges served as 206 partial content',
-    ranged?.status === 206 && ranged.acceptRanges === 'bytes' && /^bytes 0-99\/\d+$/.test(ranged.contentRange ?? '') && ranged.length === 100,
+    ranged?.status === 206 &&
+      ranged.acceptRanges === 'bytes' &&
+      /^bytes 0-99\/\d+$/.test(ranged.contentRange ?? '') &&
+      ranged.length === 100,
     `${ranged?.status} ${ranged?.contentRange} ${ranged?.length}b`,
   )
 
-  const whole = await evaluate("const r = await fetch('/sdk.js'); return { status: r.status, acceptRanges: r.headers.get('accept-ranges') }")
-  check('range support advertised on a full response', whole?.status === 200 && whole.acceptRanges === 'bytes', `${whole?.status} ${whole?.acceptRanges}`)
+  const whole = await evaluate(
+    "const r = await fetch('/sdk.js'); return { status: r.status, acceptRanges: r.headers.get('accept-ranges') }",
+  )
+  check(
+    'range support advertised on a full response',
+    whole?.status === 200 && whole.acceptRanges === 'bytes',
+    `${whole?.status} ${whole?.acceptRanges}`,
+  )
 
   // App HTML gets an import map so the bare specifier resolves.
-  const html = await evaluate("const r = await fetch('/workspace/dial-demo/index.html'); const t = await r.text(); return { status: r.status, importmap: t.includes('importmap'), mapped: t.includes('@planchette/sdk') }")
+  const html = await evaluate(
+    "const r = await fetch('/workspace/dial-demo/index.html'); const t = await r.text(); return { status: r.status, importmap: t.includes('importmap'), mapped: t.includes('@planchette/sdk') }",
+  )
   check('import map injected into app HTML', html?.status === 200 && html.importmap && html.mapped)
 
   // Path traversal out of the workspace is refused.
@@ -284,7 +324,11 @@ try {
     Array.isArray(artwork) && artwork.length === 2 && artwork.every((i) => i && i.w > 0),
     JSON.stringify(artwork),
   )
-  check('no leftover toolbar buttons', Array.isArray(panel?.strayButtons) && panel.strayButtons.length === 0, JSON.stringify(panel?.strayButtons))
+  check(
+    'no leftover toolbar buttons',
+    Array.isArray(panel?.strayButtons) && panel.strayButtons.length === 0,
+    JSON.stringify(panel?.strayButtons),
+  )
 
   // The simulator itself works end to end inside the shell.
   const sim = await evaluate(`
@@ -294,7 +338,11 @@ try {
     const s = sim.state();
     return { pucks: s.pucks.length, mmX: s.pucks[0]?.mmX, angle: s.pucks[0]?.angle, apps: sim.apps };
   `)
-  check('sim API drives the model', sim?.pucks === 1 && Math.round(sim.mmX) === 500, `mmX=${sim?.mmX?.toFixed(1)} angle=${sim?.angle?.toFixed(4)}`)
+  check(
+    'sim API drives the model',
+    sim?.pucks === 1 && Math.round(sim.mmX) === 500,
+    `mmX=${sim?.mmX?.toFixed(1)} angle=${sim?.angle?.toFixed(4)}`,
+  )
   check('sim.apps reflects the workspace', Array.isArray(sim?.apps) && sim.apps.includes('dial-demo'))
 
   const connected = await evaluate("return document.getElementById('appframe').getAttribute('src')")
@@ -342,7 +390,10 @@ try {
   } catch {
     skillExists = false
   }
-  check('reference docs seeded', ['API.md', 'DESIGN-RULES.md', 'PROTOCOL.md', 'AGENTS.md'].every((f) => guidance.includes(f)))
+  check(
+    'reference docs seeded',
+    ['API.md', 'DESIGN-RULES.md', 'PROTOCOL.md', 'AGENTS.md'].every((f) => guidance.includes(f)),
+  )
   check('agent skill survives packaging', skillExists, '.claude/skills/planchette-interface/SKILL.md')
 
   // New interface scaffolding: the folder must describe itself, not the template.
@@ -350,7 +401,10 @@ try {
   check('New interface slugs the name', created === 'my-test-rig', String(created))
   const scaffoldDoc = await fs.readFile(path.join(workspace, 'my-test-rig', 'CLAUDE.md'), 'utf8')
   const scaffoldHtml = await fs.readFile(path.join(workspace, 'my-test-rig', 'index.html'), 'utf8')
-  check('scaffolded CLAUDE.md names the interface', scaffoldDoc.startsWith('# My test rig') && scaffoldDoc.includes('DESIGN-RULES.md'))
+  check(
+    'scaffolded CLAUDE.md names the interface',
+    scaffoldDoc.startsWith('# My test rig') && scaffoldDoc.includes('DESIGN-RULES.md'),
+  )
   check('scaffolded index.html is retitled', scaffoldHtml.includes('<title>My test rig</title>'))
 
   const wsList = await evaluate('return await window.planchette.listWorkspaces()')
@@ -363,7 +417,8 @@ try {
   const flat = []
   const walk = (items, trail) => {
     for (const item of items ?? []) {
-      if (item.label) flat.push({ path: [...trail, item.label].join(' > '), label: item.label, accelerator: item.accelerator })
+      if (item.label)
+        flat.push({ path: [...trail, item.label].join(' > '), label: item.label, accelerator: item.accelerator })
       if (item.submenu) walk(item.submenu, item.label ? [...trail, item.label] : trail)
     }
   }
@@ -378,7 +433,11 @@ try {
     ['Open Workspace Folder', 'CmdOrCtrl+Shift+O'],
   ]) {
     const item = find(label)
-    check(`menu has ${label}`, Boolean(item) && item.accelerator === accel, item ? `${item.path}  ${item.accelerator}` : 'missing')
+    check(
+      `menu has ${label}`,
+      Boolean(item) && item.accelerator === accel,
+      item ? `${item.path}  ${item.accelerator}` : 'missing',
+    )
   }
   // Placement differs by platform, and getting it wrong is the likely mistake.
   const settings = find('Settings…')
@@ -397,7 +456,11 @@ try {
     }
     return { pucks: sim.state().pucks.length, dials: doc.querySelectorAll('.dial').length };
   `)
-  check('pucks survive the reload and the app rebuilds', survived?.pucks === 1 && survived?.dials === 1, JSON.stringify(survived))
+  check(
+    'pucks survive the reload and the app rebuilds',
+    survived?.pucks === 1 && survived?.dials === 1,
+    JSON.stringify(survived),
+  )
 
   /**
    * A folder name that is markup.

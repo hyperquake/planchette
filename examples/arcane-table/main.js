@@ -49,9 +49,9 @@ const BOLT_REFRESH_MS = 70
 const JAG = 0.085 // lateral jitter as a fraction of arc length
 const PARTICLES = 14000
 const SWIRL_MM = 210
-const FLOW_SCALE_MM = 260   // spatial wavelength of the drift field
-const FLOW_SPEED_MM = 34    // mm per second at full stream
-const SPARK_SHARE = 0.16    // fraction of dust that is bigger, brighter, faster
+const FLOW_SCALE_MM = 260 // spatial wavelength of the drift field
+const FLOW_SPEED_MM = 34 // mm per second at full stream
+const SPARK_SHARE = 0.16 // fraction of dust that is bigger, brighter, faster
 const PULSES_PER_ARC = 3
 
 const AMBER = [1.0, 0.66, 0.26]
@@ -504,7 +504,10 @@ function boltFor(key, now) {
     b = {
       at: now,
       main: boltShape(BOLT_LEVELS),
-      fork: Math.random() < 0.7 ? { t: 0.3 + Math.random() * 0.4, side: Math.random() < 0.5 ? -1 : 1, shape: boltShape(3) } : null,
+      fork:
+        Math.random() < 0.7
+          ? { t: 0.3 + Math.random() * 0.4, side: Math.random() < 0.5 ? -1 : 1, shape: boltShape(3) }
+          : null,
     }
     bolts.set(key, b)
   }
@@ -522,10 +525,7 @@ function drawBolt(x0, y0, x1, y1, bolt, strength, scale = 1) {
   const nx = -uy
   const ny = ux
 
-  const pt = (o) => [
-    x0 + ux * len * o.t + nx * len * o.off * JAG,
-    y0 + uy * len * o.t + ny * len * o.off * JAG,
-  ]
+  const pt = (o) => [x0 + ux * len * o.t + nx * len * o.off * JAG, y0 + uy * len * o.t + ny * len * o.off * JAG]
   const path = bolt.main.map(pt)
 
   arcs.polyline(path, mm(14) * scale, 0.12 * strength)
@@ -542,8 +542,12 @@ function drawBolt(x0, y0, x1, y1, bolt, strength, scale = 1) {
     for (let i = head; i < head + span && i < path.length - 1; i++) {
       const fade = 1 - (i - head) / span
       arcs.segment(
-        path[i][0], path[i][1], path[i + 1][0], path[i + 1][1],
-        mm(3.4) * scale * fade, 1.1 * strength * fade,
+        path[i][0],
+        path[i][1],
+        path[i + 1][0],
+        path[i + 1][1],
+        mm(3.4) * scale * fade,
+        1.1 * strength * fade,
       )
     }
   }

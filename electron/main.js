@@ -139,9 +139,7 @@ async function useWorkspace(dir) {
  * has everything it needs. Built by scripts/build-seed.mjs.
  */
 function seedDir() {
-  return app.isPackaged
-    ? path.join(process.resourcesPath, 'workspace-seed')
-    : path.join(HERE, '..', 'workspace-seed')
+  return app.isPackaged ? path.join(process.resourcesPath, 'workspace-seed') : path.join(HERE, '..', 'workspace-seed')
 }
 
 async function listApps() {
@@ -409,9 +407,7 @@ function registerProtocol() {
       const [, appId, rest] = match
       const file = safeJoin(workspace, appId, rest || 'index.html')
       if (!file) return notFound()
-      return file.toLowerCase().endsWith('.html')
-        ? serveAppHtml(file, NO_STORE)
-        : serveFile(file, request, NO_STORE)
+      return file.toLowerCase().endsWith('.html') ? serveAppHtml(file, NO_STORE) : serveFile(file, request, NO_STORE)
     }
 
     // Everything else is the host UI bundle.

@@ -106,11 +106,7 @@ function fold(name: TableEventName, data: Puck | Touch): void {
     else next.push(data)
   }
 
-  state = freeze(
-    isPuck
-      ? { ...state, pucks: next as Puck[] }
-      : { ...state, touches: next as Touch[] },
-  )
+  state = freeze(isPuck ? { ...state, pucks: next as Puck[] } : { ...state, touches: next as Touch[] })
 }
 
 function safely(fn: () => void): void {

@@ -13,7 +13,10 @@ export class Overlay {
   private puckEls = new Map<number, HTMLElement>()
   private touchEls = new Map<number, HTMLElement>()
 
-  constructor(private root: HTMLElement, private model: TableModel) {}
+  constructor(
+    private root: HTMLElement,
+    private model: TableModel,
+  ) {}
 
   render(): void {
     const s = this.model.getSurface()

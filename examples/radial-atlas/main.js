@@ -69,8 +69,7 @@ table.ready(async ({ surface }) => {
   menu = new RadialMenu(document.getElementById('menus'), content, showPlate)
 
   const plates = content.collections.reduce((n, c) => n + c.plates.length, 0)
-  statusEl.textContent =
-    `${surface.label}  ·  ${content.collections.length} collections, ${plates} plates  ·  ${surface.pxPerMm.toFixed(2)} px/mm`
+  statusEl.textContent = `${surface.label}  ·  ${content.collections.length} collections, ${plates} plates  ·  ${surface.pxPerMm.toFixed(2)} px/mm`
 
   requestAnimationFrame(function loop(now) {
     const { pucks } = table.state()

@@ -28,6 +28,7 @@ jobs:
       - run: npm run clean
       - run: npm ci
       - run: npm run lint
+      - run: npm run format:check
       - run: npm run check
       - run: npm run build
       - run: npm run build:seed
@@ -49,6 +50,7 @@ jobs:
       - run: npm run clean
       - run: npm ci
       - run: npm run lint
+      - run: npm run format:check
       - run: npm run check
       - run: npm run build
       - run: npm run build:seed
