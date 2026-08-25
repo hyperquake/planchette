@@ -5,11 +5,13 @@ directories:
   buildResources: build
 
 # The renderer bundle, the SDK bundle, and the shell. Nothing else is needed:
-# the app has no runtime dependencies.
+# the app has no runtime dependencies. LICENSE rides along because MIT asks for
+# the notice to travel with copies, and a .dmg is a copy.
 files:
   - dist/**/*
   - electron/**/*
   - package.json
+  - LICENSE
 
 # Copied into a designer's workspace on first run, so it must stay outside asar.
 extraResources:

@@ -167,6 +167,8 @@ decision that matters.
 | ---------------------- | ------------------------------------------------------------------ |
 | `npm run dev`          | Vite dev server. The main development loop.                        |
 | `npm run check`        | TypeScript, no emit.                                               |
+| `npm run lint`         | oxlint. The only static checking `electron/` gets.                 |
+| `npm run format`       | Prettier over the code. Prose, HTML and CSS are hand-formatted.    |
 | `npm run smoke`        | Launches the real desktop shell and drives it over CDP.            |
 | `npm run build`        | Host bundle, standalone SDK, standalone Three.                     |
 | `npm run electron:dev` | The Electron shell pointed at the dev server.                      |
@@ -193,3 +195,7 @@ rewrite. No bridge is built yet.
   means CDP touch injection in the Electron build.
 - **Multiple interfaces at once** in separate regions of the table.
 - **A hardware TUIO bridge**, and an app icon.
+
+## License
+
+MIT. See [`LICENSE`](LICENSE).
