@@ -21,8 +21,7 @@
  * changes.
  */
 
-import { connect, SDK_VERSION } from './transport'
-import { REFERENCE_PX_PER_MM } from './transport'
+import { connect, REFERENCE_PX_PER_MM, SDK_VERSION } from './transport'
 import type { Puck, SurfaceInfo, TableEventMap, TableEventName, TableState, Touch } from './types'
 import { angleDelta, applyCssVars, DEG, nearestEdge, wrapAngle } from './units'
 

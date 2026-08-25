@@ -29,6 +29,9 @@ function connectToHost(sink: Sink): void {
   let configured = false
 
   window.addEventListener('message', (ev: MessageEvent) => {
+    // Only the host speaks for the table. The host is equally careful in the
+    // other direction, ignoring anything that is not this frame.
+    if (ev.source !== window.parent) return
     const m = ev.data as HostMessage | undefined
     if (!m || m.__table !== PROTOCOL_VERSION) return
     if (m.type === 'config') {
