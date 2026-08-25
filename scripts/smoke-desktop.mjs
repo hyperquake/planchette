@@ -14,6 +14,9 @@ import os from 'node:os'
 import path from 'node:path'
 
 const PORT = 9333
+const ORIGIN = 'planchette://host'
+/** The main process's own inspector, for the checks the renderer cannot make. */
+const INSPECT_PORT = 9334
 const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'planchette-smoke-'))
 /**
  * Its own userData directory. Without this the test shares the real app's
@@ -37,7 +40,7 @@ const electronBinary = createRequire(import.meta.url)('electron')
 
 const electron = spawn(
   electronBinary,
-  ['.', `--remote-debugging-port=${PORT}`, `--user-data-dir=${userData}`],
+  ['.', `--remote-debugging-port=${PORT}`, `--inspect=${INSPECT_PORT}`, `--user-data-dir=${userData}`],
   { env: { ...process.env, PLANCHETTE_WORKSPACE: workspace }, stdio: ['ignore', 'pipe', 'pipe'] },
 )
 
@@ -51,7 +54,7 @@ async function findTarget() {
   for (let i = 0; i < 60; i++) {
     try {
       const list = await fetch(`http://127.0.0.1:${PORT}/json/list`).then((r) => r.json())
-      const page = list.find((t) => t.type === 'page' && String(t.url).startsWith('planchette://host/'))
+      const page = list.find((t) => t.type === 'page' && String(t.url).startsWith(`${ORIGIN}/`))
       if (page?.webSocketDebuggerUrl) return page
     } catch {
       /* not listening yet */
@@ -61,51 +64,95 @@ async function findTarget() {
   throw new Error(`renderer never appeared.\n${stderr}`)
 }
 
-let ws
-let nextId = 1
-const pending = new Map()
+/**
+ * One debug client per target. There are two: the renderer, and the main
+ * process. Reconnectable, because the window-reopen check below destroys the
+ * renderer and has to attach to the replacement.
+ */
+function debugClient() {
+  let ws
+  let nextId = 1
+  const pending = new Map()
 
-function connect(url) {
-  return new Promise((resolve, reject) => {
-    ws = new WebSocket(url)
-    ws.addEventListener('open', () => resolve())
-    ws.addEventListener('error', reject)
-    ws.addEventListener('message', (ev) => {
-      const msg = JSON.parse(ev.data)
-      const slot = pending.get(msg.id)
-      if (slot) {
-        pending.delete(msg.id)
-        slot(msg)
+  const client = {
+    connect(url) {
+      return new Promise((resolve, reject) => {
+        ws = new WebSocket(url)
+        ws.addEventListener('open', () => resolve())
+        ws.addEventListener('error', reject)
+        ws.addEventListener('message', (ev) => {
+          const msg = JSON.parse(ev.data)
+          const slot = pending.get(msg.id)
+          if (slot) {
+            pending.delete(msg.id)
+            slot(msg)
+          }
+        })
+      })
+    },
+
+    send(method, params) {
+      const id = nextId++
+      return new Promise((resolve) => {
+        pending.set(id, resolve)
+        ws.send(JSON.stringify({ id, method, params }))
+      })
+    },
+
+    /** Evaluate in the target and return the plain value. */
+    async evaluate(expression) {
+      const res = await client.send('Runtime.evaluate', {
+        expression: `(async () => { ${expression} })()`,
+        awaitPromise: true,
+        returnByValue: true,
+      })
+      if (res.result?.exceptionDetails) {
+        throw new Error(res.result.exceptionDetails.exception?.description ?? 'evaluate threw')
       }
-    })
-  })
-}
+      return res.result?.result?.value
+    },
 
-function send(method, params) {
-  const id = nextId++
-  return new Promise((resolve) => {
-    pending.set(id, resolve)
-    ws.send(JSON.stringify({ id, method, params }))
-  })
-}
-
-/** Evaluate in the renderer and return the plain value. */
-async function evaluate(expression) {
-  const res = await send('Runtime.evaluate', {
-    expression: `(async () => { ${expression} })()`,
-    awaitPromise: true,
-    returnByValue: true,
-  })
-  if (res.result?.exceptionDetails) {
-    throw new Error(res.result.exceptionDetails.exception?.description ?? 'evaluate threw')
+    close() {
+      try {
+        ws?.close()
+      } catch {}
+    },
   }
-  return res.result?.result?.value
+  return client
+}
+
+const renderer = debugClient()
+const send = (method, params) => renderer.send(method, params)
+const evaluate = (expression) => renderer.evaluate(expression)
+
+/**
+ * The main process, over its Node inspector. `require` is not in scope there and
+ * the entry point is ESM, so dynamic import is unavailable too; process.mainModule
+ * is the way through to the electron module.
+ */
+const mainProcess = debugClient()
+const inMain = (expression) => mainProcess.evaluate(`const { app, BrowserWindow } = process.mainModule.require('electron'); ${expression}`)
+
+async function findMainTarget() {
+  for (let i = 0; i < 60; i++) {
+    try {
+      const list = await fetch(`http://127.0.0.1:${INSPECT_PORT}/json/list`).then((r) => r.json())
+      if (list?.[0]?.webSocketDebuggerUrl) return list[0]
+    } catch {
+      /* not listening yet */
+    }
+    await sleep(500)
+  }
+  throw new Error(`main process inspector never appeared.\n${stderr}`)
 }
 
 try {
   const target = await findTarget()
-  await connect(target.webSocketDebuggerUrl)
+  await renderer.connect(target.webSocketDebuggerUrl)
   await send('Runtime.enable', {})
+
+  await mainProcess.connect((await findMainTarget()).webSocketDebuggerUrl)
+  await mainProcess.send('Runtime.enable', {})
 
   // userData is a fresh directory per run, so there is nothing persisted to
   // inherit. Wait for the first interface to settle before asserting anything.
@@ -311,12 +358,56 @@ try {
     return { pucks: sim.state().pucks.length, dials: doc.querySelectorAll('.dial').length };
   `)
   check('pucks survive the reload and the app rebuilds', survived?.pucks === 1 && survived?.dials === 1, JSON.stringify(survived))
+
+  /**
+   * Closing the window and reopening from the dock. Last, because it destroys the
+   * renderer everything above is talking to.
+   *
+   * macOS only, and not merely because `activate` is a dock event: on Windows and
+   * Linux `window-all-closed` quits, so there is no second window to build and
+   * nothing here is reachable. On macOS it is, and it used to leave a blank
+   * window, because per-window IPC registration threw on the second pass before
+   * loadURL ever ran.
+   */
+  if (process.platform === 'darwin') {
+    await inMain(`
+      globalThis.__activateError = null
+      process.on('unhandledRejection', (e) => { globalThis.__activateError = String((e && e.stack) || e) })
+      for (const w of BrowserWindow.getAllWindows()) w.close()
+      return 'closed'
+    `)
+    for (let i = 0; i < 40 && (await inMain('return BrowserWindow.getAllWindows().length')) > 0; i++) await sleep(100)
+
+    await inMain("app.emit('activate'); return 'emitted'")
+
+    let url = ''
+    for (let i = 0; i < 60; i++) {
+      url = await inMain("return BrowserWindow.getAllWindows()[0]?.webContents.getURL() ?? ''")
+      if (url) break
+      await sleep(250)
+    }
+    const activateError = await inMain('return globalThis.__activateError')
+    check('reopening from the dock loads the UI', url === `${ORIGIN}/`, activateError ?? url ?? 'no window')
+
+    // The failure this guards is silent from the renderer's side: the window is
+    // there, just blank, because createWindow threw partway through.
+    check('reopening raised nothing', !activateError, String(activateError ?? '').split('\n')[0])
+
+    // And the rebuilt window is actually wired up, not just pointed at a URL.
+    const reopened = await findTarget()
+    await renderer.connect(reopened.webSocketDebuggerUrl)
+    await send('Runtime.enable', {})
+    const afterReopen = await evaluate(`
+      for (let i = 0; i < 80 && !window.planchette; i++) await new Promise(r => setTimeout(r, 100));
+      return await window.planchette?.workspacePath();
+    `)
+    check('the preload bridge still answers after reopening', afterReopen === workspace, String(afterReopen))
+  }
 } catch (err) {
   check('smoke run completed', false, String(err))
 } finally {
-  try {
-    ws?.close()
-  } catch {}
+  renderer.close()
+  mainProcess.close()
   electron.kill('SIGTERM')
   await sleep(400)
   electron.kill('SIGKILL')
