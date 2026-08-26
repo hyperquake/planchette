@@ -2,7 +2,7 @@
   "name": "planchette",
   "productName": "Planchette",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Simulator for a multitouch table with tangible pucks, plus an SDK for designer-authored HTML interfaces.",
   "author": "Hyperquake",
