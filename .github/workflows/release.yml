@@ -75,6 +75,13 @@ jobs:
       - name: Tag must match package.json
         run: node scripts/check-version.mjs "${{ env.TAG }}"
 
+      # Assembled here rather than just before publishing, so a changelog that
+      # was never retitled stops the run in seconds instead of after a full
+      # package. The file survives electron-builder and pack:web writing into
+      # release/, and matches none of the upload globs below.
+      - name: Assemble the release body
+        run: node scripts/release-body.mjs
+
       - run: npm run check
       - run: npm run prepackage
 
@@ -104,7 +111,7 @@ jobs:
         with:
           tag_name: ${{ env.TAG }}
           name: Planchette ${{ env.TAG }}
-          body_path: docs/release-notes.md
+          body_path: release/RELEASE_BODY.md
           draft: true
           files: |
             release/*.dmg
@@ -138,6 +145,13 @@ jobs:
       - name: Tag must match package.json
         run: node scripts/check-version.mjs "${{ env.TAG }}"
 
+      # Assembled here rather than just before publishing, so a changelog that
+      # was never retitled stops the run in seconds instead of after a full
+      # package. The file survives electron-builder and pack:web writing into
+      # release/, and matches none of the upload globs below.
+      - name: Assemble the release body
+        run: node scripts/release-body.mjs
+
       - run: npm run check
       - run: npm run prepackage
 
@@ -159,7 +173,7 @@ jobs:
         with:
           tag_name: ${{ env.TAG }}
           name: Planchette ${{ env.TAG }}
-          body_path: docs/release-notes.md
+          body_path: release/RELEASE_BODY.md
           draft: true
           files: release/*.exe
           fail_on_unmatched_files: true

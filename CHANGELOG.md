@@ -49,6 +49,11 @@ from one version to the next.
 
 ### Changed
 
+- Release pages now say what changed. The body was previously install
+  instructions alone, identical for every version; it now leads with that
+  version's changelog section, assembled by `scripts/release-body.mjs`. A
+  release whose version has no changelog section fails the build rather than
+  publishing a page that says nothing.
 - Workspace files are served with `Cache-Control: no-store`. The watcher's
   reload worked before only because a response with no validators happens to be
   treated as stale.

@@ -125,8 +125,10 @@ rather than a bug. Taking a screenshot forces frames to run.
 - **Change the event API**: `src/sdk/types.ts` first, then the host, then
   `docs/PROTOCOL.md` and `docs/API.md`. Keep TUIO alignment in mind.
 - **Anything a user would notice**: add it under `## [Unreleased]` in
-  `CHANGELOG.md`. Not to be confused with `docs/release-notes.md`, which is the
-  install guidance published as every release body and is the same every time.
+  `CHANGELOG.md`. At release time that section is retitled to the version, and
+  `scripts/release-body.mjs` publishes it above the durable install guidance in
+  `docs/release-notes.md`. A release whose version has no changelog section
+  fails the build rather than shipping a page that says nothing.
 - **Icons**: `build/icon.icns` and `build/icon.ico` are discovered by filename
   because `buildResources: build` is set. Do not add a `mac.icon`, `win.icon`, or
   top-level `icon:` key, and do not rebuild them from a single PNG: each carries
