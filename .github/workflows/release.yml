@@ -13,7 +13,9 @@
 # To ship:
 #   npm version 0.2.0 --no-git-tag-version
 #   # retitle CHANGELOG.md's Unreleased section to 0.2.0 and date it
-#   git commit -am "Release v0.2.0" && git tag v0.2.0 && git push --follow-tags
+#   git commit -am "Release v0.2.0"
+#   git tag -a v0.2.0 -m "Planchette 0.2.0"   # annotated: --follow-tags skips
+#   git push --follow-tags                    # lightweight tags and pushes nothing
 name: release
 
 on:
