@@ -1,3 +1,10 @@
+<!--
+The durable half of a GitHub release body: install and first-run guidance, the
+same for every version. scripts/release-body.mjs puts the shipped version's
+CHANGELOG.md section above this and publishes the two together. Nothing
+version-specific belongs in here.
+-->
+
 ## Installing
 
 These builds are **unsigned**, so both systems object the first time. Once per

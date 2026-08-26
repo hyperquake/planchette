@@ -21,6 +21,7 @@
     "build:types": "tsc -p tsconfig.sdk.json",
     "build:seed": "npm run build:types && node scripts/build-seed.mjs",
     "pack:web": "node scripts/pack-web.mjs",
+    "release:body": "node scripts/release-body.mjs",
     "preview": "vite preview",
     "check": "tsc --noEmit",
     "lint": "oxlint",
