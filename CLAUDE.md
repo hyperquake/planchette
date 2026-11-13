@@ -8,6 +8,7 @@ and [`docs/API.md`](docs/API.md) instead; almost nothing here applies to that.
     npm run check    # TypeScript
     npm run lint     # oxlint, and the only static checking electron/ gets
     npm run format   # prettier, code only: prose, html and css are hand-formatted
+    npm test         # unit tests for the pure parts: OSC, TUIO, table.json, upgrades
     npm run smoke    # launches the real desktop shell and drives it over CDP
 
 ## Shape of the thing
@@ -22,11 +23,12 @@ Four parts, and the boundaries between them are load-bearing:
   the other way round.
 - **`examples/<id>/`** are example interfaces, served as static files.
 - **`electron/`** is a shell: a custom `planchette://` protocol, a workspace folder on
-  disk, and a file watcher. It adds distribution, not behaviour.
+  disk, a file watcher, and the TUIO listener for a real table (`tuio.js`,
+  configured per machine by `table.json`; see [`docs/TABLE.md`](docs/TABLE.md)).
 
 Host and interface communicate **only** over `postMessage`. That is the seam that
 lets the same interface code run against the simulator, standalone in a browser,
-and eventually against real hardware over a socket.
+and on a real table, where the host is fed by TUIO instead of the mouse.
 
 ## Invariants worth not breaking
 
@@ -62,6 +64,17 @@ is wrong.
    a `requestAnimationFrame` loop, and Chromium throttles rAF hard once it decides
    a window is occluded. A designer watching the simulator while typing in another
    app would otherwise see it freeze.
+8. **A real table's input arrives already meaning something.** Tag-to-`markerId`
+   mapping, calibration and the control puck are all applied in
+   `electron/tuio.js`, so the renderer and interfaces only ever see logical
+   marker ids. Changing the mapping re-announces everything from the raw data
+   held there, because trackers send positions only for things that move; a
+   puck sitting still would otherwise vanish until touched. For the same reason
+   TUIO pucks are never persisted to `sessionStorage` (6): the tracker replays them.
+9. **The app only overwrites workspace files it wrote and nobody edited.** That
+   is what `.planchette/seed.json` is for. Never write into a designer's
+   workspace any other way, and never edit `scripts/seed-history.json`: it is
+   the record of what 0.1.x shipped, and legacy upgrades are judged against it.
 
 ## Bare specifiers
 
@@ -124,6 +137,14 @@ rather than a bug. Taking a screenshot forces frames to run.
   in `scripts/build-seed.mjs` to ship it to designers.
 - **Change the event API**: `src/sdk/types.ts` first, then the host, then
   `docs/PROTOCOL.md` and `docs/API.md`. Keep TUIO alignment in mind.
+- **Change what a workspace gets**: edit `scripts/build-seed.mjs` or the docs it
+  copies. Existing workspaces pick the change up on their next open, through
+  the upgrade (invariant 9); there is nothing else to do.
+- **Change `table.json`'s shape**: bump `TABLE_CONFIG_VERSION` in
+  `electron/table-config.js` and add a step to `MIGRATIONS`, so a table's
+  enrollment survives the upgrade.
+- **Work on the TUIO path without a table**: `node scripts/tuio-send.mjs`, with
+  table input on in Settings.
 - **Anything a user would notice**: add it under `## [Unreleased]` in
   `CHANGELOG.md`. At release time that section is retitled to the version, and
   `scripts/release-body.mjs` publishes it above the durable install guidance in

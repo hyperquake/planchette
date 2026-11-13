@@ -9,6 +9,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { buildManifest, HISTORY_FILE, MANIFEST_DIR, MANIFEST_FILE } from '../electron/workspace-upgrade.js'
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const out = path.join(root, 'workspace-seed')
@@ -146,6 +147,16 @@ An interface folder is an ordinary static site: any local file at any depth, plu
 remote https URLs. \`@planchette/sdk\` and \`three\` resolve with no install.
 `,
 )
+
+// The manifest is what lets a later app upgrade this workspace without touching
+// anything the designer changed: it records the hash of every file the app owns.
+// History covers workspaces from releases that predate the manifest. It stays in
+// the seed and is never copied into a workspace. See electron/workspace-upgrade.js.
+const pkg = JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8'))
+const manifest = await buildManifest(out, pkg.version)
+await fs.mkdir(path.join(out, MANIFEST_DIR), { recursive: true })
+await fs.writeFile(path.join(out, MANIFEST_DIR, MANIFEST_FILE), JSON.stringify(manifest, null, 2) + '\n')
+await fs.copyFile(path.join(root, 'scripts', 'seed-history.json'), path.join(out, MANIFEST_DIR, HISTORY_FILE))
 
 const listed = (await fs.readdir(out)).sort().join(', ')
 console.log(`workspace-seed/ built: ${listed}`)

@@ -29,4 +29,12 @@ if (tag !== version) {
   )
   process.exit(1)
 }
-console.log(`version ${version} matches tag ${raw}`)
+// The SDK reports its own version to interfaces; it ships inside the app, so it must agree.
+const sdk = /export const SDK_VERSION = '([^']*)'/.exec(await readFile('src/sdk/transport.ts', 'utf8'))?.[1]
+if (sdk !== version) {
+  console.error(
+    `SDK_VERSION in src/sdk/transport.ts is ${sdk}, package.json is ${version}.\n  node scripts/sync-sdk-version.mjs`,
+  )
+  process.exit(1)
+}
+console.log(`version ${version} matches tag ${raw}, and the SDK agrees`)

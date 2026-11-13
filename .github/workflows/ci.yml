@@ -30,6 +30,7 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run check
+      - run: npm test
       - run: npm run build
       - run: npm run build:seed
       # Opens a real window, so the runner needs a logged-in desktop session.
@@ -52,6 +53,7 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run check
+      - run: npm test
       - run: npm run build
       - run: npm run build:seed
       # Gating: PROTO1-P8 runs in a logged-in session. If the runner is ever

@@ -16,12 +16,15 @@
  * between the two.
  */
 
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, protocol, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, protocol, screen, shell } from 'electron'
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { Readable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
+import { readTableConfig, writeTableConfig } from './table-config.js'
+import { createTuioListener } from './tuio.js'
+import { HISTORY_FILE, MANIFEST_DIR, upgradeWorkspace } from './workspace-upgrade.js'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const DIST = path.join(HERE, '..', 'dist')
@@ -92,6 +95,62 @@ function writeSettings(next) {
 
 let workspace = ''
 
+/* ------------------------------------------------------------------ *
+ * The physical table
+ * ------------------------------------------------------------------ */
+
+/**
+ * Per machine, not per workspace: which printed tag is on which puck, how the
+ * tracker lines up, whether to listen for TUIO at all. A designer's laptop has
+ * none of this and the defaults leave the app exactly as it was. Read
+ * synchronously because present mode has to be known before the app is ready.
+ */
+const tableConfigPath = () => path.join(app.getPath('userData'), 'table.json')
+let tableConfig = readTableConfig(tableConfigPath())
+
+/**
+ * Present mode: the app is the table's display. Fullscreen on the table's
+ * screen, no authoring chrome, input from TUIO.
+ *
+ * Chosen at launch, by table.json or `--present`, because one part of it can
+ * only be set before the app is ready: a device scale factor of 1. Windows
+ * commonly runs a 4K panel at 150%, which would make the window 2560 CSS
+ * pixels wide, and the whole promise that one CSS pixel is one table pixel
+ * would quietly break. `--no-present` overrides the file, so an operator can
+ * always get the authoring UI back on a machine that boots into the table.
+ */
+const PRESENT = !process.argv.includes('--no-present') && (process.argv.includes('--present') || tableConfig.present)
+if (PRESENT) app.commandLine.appendSwitch('force-device-scale-factor', '1')
+
+/** Switching mode means a fresh process, since the scale factor is fixed at launch. */
+function relaunch(present) {
+  const args = process.argv.slice(1).filter((a) => a !== '--present' && a !== '--no-present')
+  args.push(present ? '--present' : '--no-present')
+  app.relaunch({ args })
+  app.exit(0)
+}
+
+/** Created once the app is ready. Opens no socket unless table.json enables TUIO. */
+let tuio = null
+
+function startTuio() {
+  tuio = createTuioListener({
+    frame: (f) => send('tuio:frame', f),
+    control: (e) => send('tuio:control', e),
+    status: (s) => send('tuio:status', s),
+  })
+  tuio.configure(tableConfig)
+}
+
+/** A renderer that just loaded has an empty model, while the pucks are still on the table. */
+function replayTuio() {
+  if (!tuio) return
+  const { frame, controls } = tuio.snapshot()
+  send('tuio:frame', frame)
+  for (const c of controls) send('tuio:control', c)
+  send('tuio:status', tuio.status())
+}
+
 /** Most recent first. Enough to cover a few concurrent client projects. */
 const MAX_RECENT = 8
 
@@ -156,17 +215,46 @@ async function listApps() {
   }
 }
 
+/**
+ * What the last upgrade did, per workspace path, for the renderer to report.
+ * Pulled rather than pushed: at startup the upgrade runs before any window exists.
+ */
+const upgradeReports = new Map()
+
 async function ensureWorkspace() {
   await fsp.mkdir(workspace, { recursive: true })
-  if ((await listApps()).length > 0) return
-
   const seed = seedDir()
   if (!fs.existsSync(seed)) {
     console.error(`[planchette] no workspace seed at ${seed}; run npm run build:seed`)
     return
   }
-  // Never clobber: a folder with no apps may still hold a designer's notes.
-  await fsp.cp(seed, workspace, { recursive: true, force: false, errorOnExist: false })
+
+  if ((await listApps()).length > 0) {
+    // In dev the workspace is the repo's own examples/ folder, which must never
+    // receive generated reference files.
+    if (DEV_URL) return
+    try {
+      const report = await upgradeWorkspace(workspace, seed, app.getVersion())
+      if (report.status === 'upgraded') {
+        upgradeReports.set(workspace, report)
+        console.info(`[planchette] workspace upgraded from ${report.from} to ${report.to}`, report)
+      }
+    } catch (err) {
+      // A failed upgrade must never stop the designer opening their work.
+      console.error('[planchette] workspace upgrade failed', err)
+    }
+    return
+  }
+
+  // Never clobber: a folder with no apps may still hold a designer's notes. The
+  // seed history is only for upgrading older workspaces, so it stays behind.
+  const history = path.join(seed, MANIFEST_DIR, HISTORY_FILE)
+  await fsp.cp(seed, workspace, {
+    recursive: true,
+    force: false,
+    errorOnExist: false,
+    filter: (src) => path.resolve(src) !== path.resolve(history),
+  })
 }
 
 /* ------------------------------------------------------------------ *
@@ -543,6 +631,28 @@ function registerIpc() {
     return menu ? describe(menu.items) : null
   })
   ipcMain.handle('workspace:path', () => workspace)
+
+  ipcMain.handle('table:get', () => tableConfig)
+  ipcMain.handle('table:path', () => tableConfigPath())
+  ipcMain.handle('tuio:status', () => tuio?.status() ?? null)
+
+  /**
+   * The renderer saves the whole config; normalise() inside writeTableConfig is
+   * what makes that safe. Applied live, so enrolling a puck takes effect at once.
+   */
+  ipcMain.handle('table:save', (_e, next) => {
+    tableConfig = writeTableConfig(tableConfigPath(), next)
+    tuio?.configure(tableConfig)
+    send('table:changed', tableConfig)
+    return tableConfig
+  })
+
+  /** Hand over the current workspace's upgrade report once, then forget it. */
+  ipcMain.handle('workspace:upgrade-report', () => {
+    const report = upgradeReports.get(workspace) ?? null
+    upgradeReports.delete(workspace)
+    return report
+  })
   ipcMain.handle('workspace:list', () => ({ current: workspace, recent: reachableWorkspaces() }))
 
   ipcMain.handle('workspace:use', async (_e, dir) => {
@@ -708,9 +818,45 @@ function buildMenu() {
         { role: 'togglefullscreen' },
       ],
     },
+    {
+      label: 'Table',
+      submenu: [
+        {
+          label: 'Choose Interface…',
+          accelerator: 'CmdOrCtrl+Shift+P',
+          enabled: PRESENT,
+          click: () => send('app:picker'),
+        },
+        { type: 'separator' },
+        { label: 'Assign Pucks…', click: () => send('app:enroll') },
+        { label: 'Calibrate…', click: () => send('app:calibrate') },
+        {
+          label: 'Show table.json',
+          click: () => {
+            // Written out first, so there is a file to show even on a machine
+            // that has only ever run on defaults.
+            if (!fs.existsSync(tableConfigPath())) writeTableConfig(tableConfigPath(), tableConfig)
+            shell.showItemInFolder(tableConfigPath())
+          },
+        },
+        { type: 'separator' },
+        {
+          label: PRESENT ? 'Leave Present Mode' : 'Enter Present Mode',
+          accelerator: 'CmdOrCtrl+Shift+F',
+          click: () => relaunch(!PRESENT),
+        },
+      ],
+    },
     { role: 'windowMenu' },
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+}
+
+/** The table's screen: the one table.json names, or the primary display. */
+function presentBounds() {
+  const all = screen.getAllDisplays()
+  const chosen = (tableConfig.display !== null && all[tableConfig.display]) || screen.getPrimaryDisplay()
+  return chosen.bounds
 }
 
 async function createWindow() {
@@ -719,11 +865,12 @@ async function createWindow() {
     // Ignored on macOS, which uses the bundle or the dock icon set below. This
     // is what gives Windows and Linux a real window and taskbar icon in dev.
     ...(icon ? { icon } : {}),
-    width: 1600,
-    height: 1000,
-    minWidth: 1100,
-    minHeight: 700,
-    backgroundColor: '#14161a',
+    ...(PRESENT
+      ? // Kiosk rather than plain fullscreen: no taskbar, no dock, nothing for an
+        // elbow on the table edge to open. The menu's accelerators still work.
+        { ...presentBounds(), kiosk: true, frame: false, autoHideMenuBar: true }
+      : { width: 1600, height: 1000, minWidth: 1100, minHeight: 700 }),
+    backgroundColor: PRESENT ? '#000000' : '#14161a',
     title: 'Planchette',
     show: false,
     webPreferences: {
@@ -744,6 +891,8 @@ async function createWindow() {
   })
 
   win.once('ready-to-show', () => win.show())
+  // Every load, not once: Reload Simulator gives the renderer an empty model.
+  win.webContents.on('did-finish-load', replayTuio)
   buildMenu()
   watchWorkspace()
 
@@ -761,7 +910,9 @@ async function createWindow() {
     if (!url.startsWith(DEV_URL ?? `${ORIGIN}/`)) event.preventDefault()
   })
 
-  await win.loadURL(DEV_URL ?? `${ORIGIN}/`)
+  // The renderer learns its mode from the URL, so a reload keeps it.
+  const base = DEV_URL ?? `${ORIGIN}/`
+  await win.loadURL(PRESENT ? `${base}?present=1&surface=${encodeURIComponent(tableConfig.surface)}` : base)
   return win
 }
 
@@ -813,6 +964,8 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   watcher?.close()
   watcher = null
+  tuio?.close()
+  tuio = null
 })
 
 app.whenReady().then(async () => {
@@ -828,6 +981,7 @@ app.whenReady().then(async () => {
   if (!DEV_URL && !WORKSPACE_OVERRIDE) rememberWorkspace(workspace)
   registerProtocol()
   registerIpc()
+  startTuio()
 
   // macOS reads the dock icon from the bundle, which an unpackaged run has not
   // got, so set it explicitly. Once, not per window.

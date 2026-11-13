@@ -18,3 +18,8 @@ package-lock.json
 # Generated from geometry by brand/tools/make-icons.py rather than hand-edited.
 brand/*.svg
 public/favicon.svg
+
+# Byte-for-byte records of what released versions shipped. Workspace upgrades
+# compare hashes against these, so reformatting either one would break them.
+scripts/seed-history.json
+test/fixtures
