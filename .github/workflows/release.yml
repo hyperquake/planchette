@@ -16,6 +16,9 @@
 #   git commit -am "Release v0.2.0"
 #   git tag -a v0.2.0 -m "Planchette 0.2.0"   # annotated: --follow-tags skips
 #   git push --follow-tags                    # lightweight tags and pushes nothing
+#
+# A beta is the same with a version like 0.2.0-beta.1 and a matching changelog
+# heading. Any tag containing a dash is published as a pre-release.
 name: release
 
 on:
@@ -115,6 +118,10 @@ jobs:
           name: Planchette ${{ env.TAG }}
           body_path: release/RELEASE_BODY.md
           draft: true
+          # A tag with a dash (v0.2.0-beta.1) is a pre-release. Without this,
+          # publishing the draft would make a beta the Latest release, which is
+          # what designers download.
+          prerelease: ${{ contains(env.TAG, '-') }}
           files: |
             release/*.dmg
             release/planchette-web-*.zip
@@ -177,6 +184,10 @@ jobs:
           name: Planchette ${{ env.TAG }}
           body_path: release/RELEASE_BODY.md
           draft: true
+          # A tag with a dash (v0.2.0-beta.1) is a pre-release. Without this,
+          # publishing the draft would make a beta the Latest release, which is
+          # what designers download.
+          prerelease: ${{ contains(env.TAG, '-') }}
           files: release/*.exe
           fail_on_unmatched_files: true
 

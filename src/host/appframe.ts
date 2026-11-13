@@ -1,4 +1,11 @@
-import { PROTOCOL_VERSION, type HostMessage, type Puck, type TableEventName, type Touch } from '../sdk/types'
+import {
+  PROTOCOL_VERSION,
+  type HostMessage,
+  type Puck,
+  type TableEventName,
+  type TableState,
+  type Touch,
+} from '../sdk/types'
 import { appSource } from './appsource'
 import type { TableModel } from './model'
 
@@ -13,6 +20,10 @@ export class AppFrame {
   readonly iframe: HTMLIFrameElement
   private connected = false
   currentApp: string | null = null
+  /** While true, new touches belong to the host (the interface picker), not the app. */
+  private holding = false
+  /** Touches that started while holding. The app never hears of them, start to end. */
+  private held = new Set<number>()
 
   constructor(
     iframe: HTMLIFrameElement,
@@ -40,6 +51,15 @@ export class AppFrame {
     if (this.currentApp) this.load(this.currentApp)
   }
 
+  /**
+   * Keep new touches away from the app, for as long as the host has something
+   * on top of it. Touches the app already knows about still move and end
+   * normally: an app must never be left holding a touch that never ends.
+   */
+  holdNewTouches(on: boolean): void {
+    this.holding = on
+  }
+
   private onMessage = (ev: MessageEvent): void => {
     if (ev.source !== this.iframe.contentWindow) return
     const m = ev.data as { __table?: number; type?: string } | undefined
@@ -57,7 +77,7 @@ export class AppFrame {
     }
     for (const id of this.model.touchIds()) {
       const t = this.model.publicTouch(id)
-      if (t) this.sendEvent('touchstart', t)
+      if (t && !this.held.has(id)) this.post({ __table: PROTOCOL_VERSION, type: 'event', name: 'touchstart', data: t })
     }
   }
 
@@ -66,16 +86,30 @@ export class AppFrame {
       __table: PROTOCOL_VERSION,
       type: 'config',
       surface: this.model.getSurface(),
-      state: this.model.snapshot(),
+      state: this.snapshot(),
     })
   }
 
   sendState(): void {
-    this.post({ __table: PROTOCOL_VERSION, type: 'state', state: this.model.snapshot() })
+    this.post({ __table: PROTOCOL_VERSION, type: 'state', state: this.snapshot() })
   }
 
   sendEvent(name: TableEventName, data: Puck | Touch): void {
+    if (name === 'touchstart' && this.holding) {
+      this.held.add(data.id)
+      return
+    }
+    if ((name === 'touchmove' || name === 'touchend') && this.held.has(data.id)) {
+      if (name === 'touchend') this.held.delete(data.id)
+      return
+    }
     this.post({ __table: PROTOCOL_VERSION, type: 'event', name, data })
+  }
+
+  /** The model's state, minus any touch the app was never told about. */
+  private snapshot(): TableState {
+    const s = this.model.snapshot()
+    return this.held.size ? { ...s, touches: s.touches.filter((t) => !this.held.has(t.id)) } : s
   }
 
   private post(msg: HostMessage): void {

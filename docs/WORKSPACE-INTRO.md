@@ -61,10 +61,27 @@ moments. Both see the same table.
 | `dial-demo/`       | A puck as a rotary dial. Start here; it is short.                |
 | `radial-atlas/`    | Nested radial menus, and loading images and text from disk.       |
 | `arcane-table/`    | A Three.js showcase: bloom, particles, arcs between pucks.        |
+| `.planchette/`     | What the app wrote here and when, so it can update these files safely. Leave it be. |
+
+When Planchette is updated, it refreshes the reference files above if you have
+not edited them. If you have, yours is kept and the new version is put beside it,
+as `API.new.md` for example. Your interfaces are never touched.
 
 Bare specifiers `@planchette/sdk` and `three` resolve with no install. Beyond
 that an interface folder is a normal static site: reference any local file at any
 depth, and remote `https` URLs too.
+
+## On the real table
+
+The same interface runs on the table with no changes. The table's computer runs
+Planchette in present mode, taking pucks and fingers from the table's tracker,
+and each table maps the tags printed on its pucks to the numbers you used here:
+puck 1 in the simulator is puck 1 on the table. Test with the marker numbers your
+interface expects, and say which ones it uses.
+
+Two things only show up on real hardware, which is why the rules below insist on
+them: a puck briefly disappears when a sleeve passes over it, and several people
+touch at once.
 
 ## Driving it from the console
 

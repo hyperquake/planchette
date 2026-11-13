@@ -112,20 +112,29 @@ millimetre sizing stays honest and you are simply working on a smaller table.
 
 ## Mapping to real hardware
 
-Not built (see the non-goals in the plan), but the schema is shaped for it.
-MultiTaction's stack can emit TUIO: add a `TuioSender` block to `config.txt`, or
-point the on-screen display at a TUIO listener, then run `MTServer`, which
-forwards display events to your application.
-
-The bridge is then UDP to WebSocket, and drops in behind `src/sdk/transport.ts`
-with no change to any app:
+The desktop app takes TUIO 1.1 from a real table and feeds it into the same
+model the mouse drives, so an interface cannot tell the difference and needs no
+changes. Setting a table up is in [`TABLE.md`](TABLE.md); this is the mapping.
 
 | TUIO | This API |
 | ---- | -------- |
-| `/tuio/2Dobj set s i x y a X Y A m r` | `Puck`: `s`=`id`, `i`=`markerId`, `x`/`y`, `a`=`angle`, `X`/`Y`=`vx`/`vy`, `A`=`vAngle` |
-| `/tuio/2Dcur set s x y X Y m` | `Touch`: `s`=`id`, `x`/`y`, `X`/`Y` |
-| `alive` / `fseq` | Presence and frame sequencing, which become add/remove events |
+| `/tuio/2Dobj set s i x y a X Y A m r` | `Puck`: `x`/`y` and `a`=`angle`, after the table's calibration. `i`, the printed tag, becomes `markerId` through the table's assignments. |
+| `/tuio/2Dcur set s x y X Y m` | `Touch`: `x`/`y`. 2Dcur carries no size, so `radiusMm` is a fixed 9mm. |
+| `alive` / `fseq` | Presence and frame order, which become add and remove events. Late frames are dropped by TUIO's own rule. |
 
-Existing JavaScript TUIO clients worth borrowing from rather than reimplementing:
-[`InteractiveScapeGmbH/tuio_client_js`](https://github.com/InteractiveScapeGmbH/tuio_client_js)
+**`markerId` is logical.** Pucks carry whatever tag ids were printed on them.
+Each table assigns its tags to the small numbers interfaces use (1, 2, 3...), so
+an interface written against puck 1 in the simulator gets puck 1 on any table,
+whatever is printed on it. Until a table has any assignments, raw tag ids pass
+through unchanged.
+
+`id` is assigned by the host, as it is for a simulated puck. It changes whenever
+the tracker re-acquires a marker, exactly as TUIO's own session id does.
+
+A table may reserve one tag as a **control puck**, which opens the host's
+interface picker. It never reaches an interface.
+
+Not read yet: `/tuio/2Dblb` (contact size, which palm rejection would want) and
+TUIO 2.0. Existing JavaScript TUIO clients, if those are ever wanted in the
+browser: [`InteractiveScapeGmbH/tuio_client_js`](https://github.com/InteractiveScapeGmbH/tuio_client_js)
 (TUIO 1.1 and 2.0) and [`Tuio.js`](https://github.com/fe9lix/Tuio.js).

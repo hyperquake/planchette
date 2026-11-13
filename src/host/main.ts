@@ -3,8 +3,13 @@ import markUrl from '../../brand/mark-white.svg?url'
 import { AppFrame } from './appframe'
 import { appSource } from './appsource'
 import { installInput } from './input'
+import { setupEnrollment } from './enroll'
 import { Inspector } from './inspector'
 import { TableModel } from './model'
+import { showUpgradeNotice } from './notice'
+import { setupTableSettings } from './table-ui'
+import { installPresent } from './present'
+import { installTuio } from './tuio'
 import { Overlay } from './overlay'
 import { installSimApi } from './simapi'
 import { infoFor, PRESETS } from './surface'
@@ -76,6 +81,18 @@ function embedCenter(): { x: number; y: number } {
 
 if (EMBED) document.body.classList.add('embed')
 
+/**
+ * Present mode, on the table itself. The main process decides it at launch and
+ * says so in the URL (see PRESENT in electron/main.js).
+ *
+ * The opposite of an authoring session in every way that matters: no chrome,
+ * no mouse-driven pucks, no overlay drawn on top of real ones, nothing restored
+ * from a previous session (the tracker is the truth), and the surface at one
+ * table pixel per screen pixel.
+ */
+const PRESENT = params.has('present') && !EMBED
+if (PRESENT) document.body.classList.add('present')
+
 const stage = $('#stage')
 const sizer = $('#sizer')
 const surfaceEl = $('#surface')
@@ -119,6 +136,9 @@ function loadPrefs(): Prefs {
 }
 
 const prefs = loadPrefs()
+// The table's own surface, from table.json. Not saved: it is not a preference.
+if (PRESENT)
+  prefs.surface = PRESETS.some((p) => p.id === params.get('surface')) ? params.get('surface')! : prefs.surface
 const savePrefs = () => {
   if (EMBED) return
   localStorage.setItem(PREFS_KEY, JSON.stringify(prefs))
@@ -148,9 +168,12 @@ interface SavedPuck {
 }
 
 function persistTable(model: TableModel): void {
-  if (EMBED) return
+  if (EMBED || PRESENT) return
   const pucks: SavedPuck[] = model
     .puckIds()
+    // A real table's pucks are not ours to restore: the tracker replays them,
+    // and a restored copy would sit there after the real one was lifted.
+    .filter((id) => !tuioInput?.owns(id))
     .map((id) => model.publicPuck(id)!)
     .map((p) => ({ markerId: p.markerId, x: p.x, y: p.y, angle: p.angle }))
   try {
@@ -161,7 +184,7 @@ function persistTable(model: TableModel): void {
 }
 
 function restoreTable(model: TableModel): void {
-  if (EMBED) return
+  if (EMBED || PRESENT) return
   try {
     const saved = JSON.parse(sessionStorage.getItem(TABLE_KEY) ?? '[]') as SavedPuck[]
     for (const p of saved) {
@@ -179,16 +202,25 @@ const model = new TableModel(infoFor(prefs.surface))
 const frame = new AppFrame(iframe, model)
 const overlay = new Overlay($('#overlay'), model)
 // Not merely hidden: it does DOM work every frame, which an embed has no use for.
-const inspector = EMBED ? null : new Inspector($('#inspector'), model)
+const inspector = EMBED || PRESENT ? null : new Inspector($('#inspector'), model)
 
 // Every mutation of the model reaches the app as a discrete event. The full
 // state snapshot is sent separately, once per frame.
 model.subscribe((name, data) => frame.sendEvent(name, data))
 
-installInput(surfaceEl, model, {
-  markerId: () => Math.max(1, Number(markerInput.value) || 1),
-  pinchMode: () => pinchBtn.classList.contains('on'),
-})
+// A real table, in the desktop build. Inert until table.json turns TUIO on: the
+// main process sends nothing, so this is just a subscription.
+const tuioInput = window.planchette && !EMBED ? installTuio(model, window.planchette) : null
+if (inspector && tuioInput) inspector.tagFor = tuioInput.tagFor
+
+// On the table, every puck and finger comes from the tracker. A mouse there is
+// an operator's, for the settings and setup dialogs, not a simulated hand.
+if (!PRESENT) {
+  installInput(surfaceEl, model, {
+    markerId: () => Math.max(1, Number(markerInput.value) || 1),
+    pinchMode: () => pinchBtn.classList.contains('on'),
+  })
+}
 
 let appList: string[] = []
 
@@ -212,11 +244,32 @@ installSimApi(
   },
 )
 
+/* ---------------- present mode ---------------- */
+
+if (PRESENT && window.planchette) {
+  const bridge = window.planchette
+  const picker = installPresent({
+    surfaceEl,
+    model,
+    frame,
+    list: () => appList,
+    select: selectApp,
+    onControl: (cb) => bridge.onTuioControl(cb),
+  })
+  bridge.onPicker(() => (picker.isOpen ? picker.close() : picker.open()))
+}
+
 /* ---------------- zoom ---------------- */
 
 function fitScale(): number {
   const s = model.getSurface()
   if (embedFixedZoom !== null) return embedFixedZoom
+  if (PRESENT) {
+    // Exactly 1 on the real table. Anywhere else (testing on a laptop) fit, and
+    // say so, because then sizes on screen are not sizes on the table.
+    const fit = Math.min(stage.clientWidth / s.widthPx, stage.clientHeight / s.heightPx)
+    return Math.abs(fit - 1) < 0.002 ? 1 : fit
+  }
   if (prefs.zoomMode === 'fixed') return prefs.zoom
   // Twice the css padding on #stage, which embed mode halves.
   const pad = EMBED ? 16 : 32
@@ -234,6 +287,11 @@ function applyZoom(): void {
   // Overlay labels counter-scale by this so they stay readable when zoomed out.
   surfaceEl.style.setProperty('--inv-fit', String(1 / f))
   zoomReadout.textContent = `${Math.round(f * 100)}%`
+  if (PRESENT) {
+    const warn = $('#present-scale')
+    warn.hidden = f === 1
+    warn.textContent = `Not 1:1. This display is ${stage.clientWidth} x ${stage.clientHeight}, the surface is ${s.widthPx} x ${s.heightPx}.`
+  }
   $('#zoom-fit').classList.toggle('on', prefs.zoomMode === 'fit')
   $('#zoom-1').classList.toggle('on', prefs.zoomMode === 'fixed' && prefs.zoom === 1)
 
@@ -338,12 +396,20 @@ async function setupWorkspace(): Promise<void> {
 
   draw(await ws.list())
 
+  /** Opening a workspace may have upgraded it. Say so once, if it did. */
+  const reportUpgrade = async () => {
+    const report = await ws.upgradeReport()
+    if (report) showUpgradeNotice(report, () => void ws.reveal())
+  }
+  await reportUpgrade()
+
   /** A different folder means a different set of interfaces, so force a reload. */
   const switchTo = async (list: { current: string; recent: string[] } | null) => {
     if (!list) return
     status.textContent = ''
     draw(list)
     await refreshApps(true)
+    await reportUpgrade()
   }
 
   select.addEventListener('change', async () => {
@@ -402,6 +468,10 @@ async function setupWorkspace(): Promise<void> {
   $('#ws-forget').addEventListener('click', () => void forgetWorkspace())
 
   const bridge = window.planchette
+  if (bridge) {
+    setupTableSettings(bridge, (s) => inspector?.setTuioStatus(s))
+    setupEnrollment(bridge, model)
+  }
   bridge?.onChooseWorkspace(() => void changeWorkspace())
   bridge?.onForgetWorkspace(() => void forgetWorkspace())
   bridge?.onNewInterface(() => {
@@ -533,7 +603,7 @@ function tick(now: number): void {
   // tracker does, so apps that poll state() never see a stale frame.
   if (changed || model.hasContacts()) frame.sendState()
   if (changed) {
-    overlay.render()
+    if (!PRESENT || document.body.classList.contains('calibrating')) overlay.render()
     pendingPersist = true
   }
   if (pendingPersist && now - lastPersist > PERSIST_INTERVAL_MS) {

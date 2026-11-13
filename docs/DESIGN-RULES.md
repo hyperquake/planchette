@@ -28,7 +28,9 @@ decide whether an interface survives contact with the real table.
   rather than destroying state immediately.
 - **Key by `markerId`, not by `id`.** `id` is a tracking session and changes
   whenever the tracker re-acquires a marker. `markerId` is the physical identity
-  of the object. The tradeoff is that two pucks carrying the same marker collapse
+  of the object: puck 1, puck 2, and so on. Each real table maps its printed tags
+  onto those same small numbers, so puck 1 in the simulator is puck 1 on the
+  table. The tradeoff is that two pucks carrying the same marker collapse
   onto one thing; if you hand out duplicate markers, key by `id` and use
   `markerId` plus last-known position to re-associate after a dropout.
 - **Never let an event handler depend on your render loop.** This bites in two

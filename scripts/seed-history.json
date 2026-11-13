@@ -1,0 +1,44 @@
+{
+  "0.1.0": {
+    "files": {
+      ".claude/skills/planchette-interface/SKILL.md": "d12e349ee48fdad04b4b8b6c5dae6dec83bf46fb05839913b2e0ed37d45175dd",
+      "AGENTS.md": "492845544f370225b260bf94374e62fdfe0a086253239f93850421d5c4af3476",
+      "API.md": "2a00eb90a30c26b56400dc88d31a846019f0a1c0e92482f19178505a587c84a5",
+      "CLAUDE.md": "492845544f370225b260bf94374e62fdfe0a086253239f93850421d5c4af3476",
+      "DESIGN-RULES.md": "678f3854f8b163adc7fd5be1108abfa4e3a4eab3596108d1ed70dc8ed8321f66",
+      "PROTOCOL.md": "9a78e35d71a4bd09719fecff0911da537cd0fd088538ab323fcd4c804c9fa85f",
+      "jsconfig.json": "7b87cf69a227ab2839012675d103e9cc1a9fb0f01d1f91ddcb71cae00992e185",
+      "types/index.d.ts": "5f625df79e67be1bc8ebc869c9abfd5366d2d7b5c0720a837521abd4ae7590d0",
+      "types/transport.d.ts": "354bfd5577e25719f46f8e466857dceaab3113f7de991da8408c6c9ec5512105",
+      "types/types.d.ts": "581b75ac3f6c7ab2da10b39d1c07aab3ef3667766ef4b12d8b60356f708714ca",
+      "types/units.d.ts": "82c8725ca769e4f6fa5b4e7ffc5663c9085547e003604abd33eceee15949a94d"
+    },
+    "examples": [
+      "_template",
+      "arcane-table",
+      "dial-demo",
+      "radial-atlas"
+    ]
+  },
+  "0.1.1": {
+    "files": {
+      ".claude/skills/planchette-interface/SKILL.md": "d12e349ee48fdad04b4b8b6c5dae6dec83bf46fb05839913b2e0ed37d45175dd",
+      "AGENTS.md": "492845544f370225b260bf94374e62fdfe0a086253239f93850421d5c4af3476",
+      "API.md": "2a00eb90a30c26b56400dc88d31a846019f0a1c0e92482f19178505a587c84a5",
+      "CLAUDE.md": "492845544f370225b260bf94374e62fdfe0a086253239f93850421d5c4af3476",
+      "DESIGN-RULES.md": "678f3854f8b163adc7fd5be1108abfa4e3a4eab3596108d1ed70dc8ed8321f66",
+      "PROTOCOL.md": "9a78e35d71a4bd09719fecff0911da537cd0fd088538ab323fcd4c804c9fa85f",
+      "jsconfig.json": "7b87cf69a227ab2839012675d103e9cc1a9fb0f01d1f91ddcb71cae00992e185",
+      "types/index.d.ts": "5f625df79e67be1bc8ebc869c9abfd5366d2d7b5c0720a837521abd4ae7590d0",
+      "types/transport.d.ts": "354bfd5577e25719f46f8e466857dceaab3113f7de991da8408c6c9ec5512105",
+      "types/types.d.ts": "581b75ac3f6c7ab2da10b39d1c07aab3ef3667766ef4b12d8b60356f708714ca",
+      "types/units.d.ts": "a628693eac911798153456c71344c094a59e64219b93ec673947852015723849"
+    },
+    "examples": [
+      "_template",
+      "arcane-table",
+      "dial-demo",
+      "radial-atlas"
+    ]
+  }
+}

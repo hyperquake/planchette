@@ -112,7 +112,7 @@ interface SurfaceInfo {
 
 interface Puck {
   id: number          // session id, stable only while continuously tracked
-  markerId: number    // physical marker. Key your own state by THIS.
+  markerId: number    // which puck this is (1, 2, 3...). Key your own state by THIS.
   x: number; y: number            // normalized 0..1, y axis down
   mmX: number; mmY: number
   angle: number       // radians, 0 = up, clockwise positive, range [0, 2*PI)

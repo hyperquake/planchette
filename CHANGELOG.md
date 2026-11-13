@@ -12,6 +12,41 @@ from one version to the next.
 
 Nothing yet.
 
+## [0.2.0-beta.1] - 2026-11-13
+
+A beta of 0.2.0, for testing on a real table. Published as a pre-release.
+
+### Added
+
+- **Run interfaces on a real table.** The desktop app listens for TUIO 1.1 from
+  a table's tracker (pucks and fingers) and feeds it to interfaces exactly as
+  the simulator does, so they need no changes. Off unless switched on in
+  **Settings > Table input**; a designer's machine never opens a socket. See
+  `docs/TABLE.md`.
+- **Present mode** for the table's own computer: fullscreen on the table's
+  display at one table pixel per screen pixel whatever the display scaling, no
+  authoring chrome, native touch ignored. **Table > Enter Present Mode**, or
+  `"present": true` in `table.json` to boot into it.
+- **A control puck** that opens an interface picker on the table: put it down,
+  turn it, touch an interface to open it.
+- **Table > Assign Pucks** maps the tags printed on a table's pucks to the
+  marker numbers interfaces use, and **Table > Calibrate** lines the tracker up
+  with the screen. Both apply live. Stored per computer in `table.json`.
+- `scripts/tuio-send.mjs`, a stand-in tracker for working without a table.
+- `npm test`: unit tests for OSC decoding, TUIO frames, `table.json` and
+  workspace upgrades, gating CI on both runners.
+
+### Changed
+
+- **Workspaces are now kept up to date.** Opening a workspace refreshes its
+  reference docs, SDK types and agent guidance when the app has newer ones. A
+  file you edited is kept, with the new version written beside it
+  (`API.new.md`); anything you deleted stays deleted; interfaces and examples
+  are never overwritten. A notice says what changed. Works for workspaces
+  created by 0.1.0 and 0.1.1.
+- `table.version` and the SDK's `hello` now report the app's version. They said
+  0.1.0 in every release so far.
+
 ## [0.1.1] - 2026-08-26
 
 ### Fixed
@@ -86,6 +121,7 @@ First release.
 - Four surface presets, an inspector showing raw wire values, and puck
   arrangements that survive a reload.
 
-[Unreleased]: https://github.com/Potion/planchette/compare/v0.1.1...HEAD
-[0.1.1]: https://github.com/Potion/planchette/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/Potion/planchette/releases/tag/v0.1.0
+[Unreleased]: https://github.com/hyperquake/planchette/compare/v0.2.0-beta.1...HEAD
+[0.2.0-beta.1]: https://github.com/hyperquake/planchette/compare/v0.1.1...v0.2.0-beta.1
+[0.1.1]: https://github.com/hyperquake/planchette/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/hyperquake/planchette/releases/tag/v0.1.0

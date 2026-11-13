@@ -12,6 +12,17 @@ run the app seeds it with two example apps, SDK type declarations, a
 `jsconfig.json`, and a `CLAUDE.md` carrying the design rules. A coworker can open
 that folder in any editor or coding agent and start working.
 
+**Existing workspaces are upgraded, carefully.** Seeding happens once, so
+without help a workspace's reference docs, SDK types and agent guidance would
+stay at whatever version created it. `build-seed.mjs` records the hash of every
+file the app owns in `.planchette/seed.json`, and each time a workspace is
+opened `electron/workspace-upgrade.js` brings it up to date: a file still as the
+app wrote it is replaced; a file the designer edited is kept, with the new one
+written beside it (`API.new.md`); anything they deleted stays deleted; examples
+and interfaces are never overwritten. Workspaces from 0.1.x, which have no
+manifest, are matched against `scripts/seed-history.json`, the hashes of what
+those releases shipped. A folder the app never seeded is left alone.
+
 The app watches the workspace. Saving a file reloads just the app iframe, and the
 puck arrangement survives, so the loop is: arrange pucks once, then edit freely.
 
@@ -22,7 +33,9 @@ puck arrangement survives, so the loop is: arrange pucks once, then edit freely.
 | `electron/main.js`       | Serves everything over `planchette://`, owns the workspace and watcher. |
 | `electron/preload.cjs`   | The whole renderer-to-disk surface. Nothing else crosses.       |
 | `src/host/appsource.ts`  | Hides whether interfaces come from Vite or the workspace.         |
-| `scripts/build-seed.mjs` | Assembles `workspace-seed/`, what a fresh workspace gets.        |
+| `scripts/build-seed.mjs` | Assembles `workspace-seed/`, what a fresh workspace gets, and its manifest. |
+| `electron/workspace-upgrade.js` | Brings an older workspace up to the current seed without touching edits. |
+| `electron/tuio.js`       | TUIO from a real table; see `TABLE.md`.                          |
 | `scripts/adhoc-sign.cjs` | Ad-hoc signs the macOS app so it will launch.                    |
 
 The host UI and the interfaces share one origin, `planchette://host`: the UI from
