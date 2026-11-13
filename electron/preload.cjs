@@ -8,6 +8,7 @@ const { contextBridge, ipcRenderer } = require('electron')
 contextBridge.exposeInMainWorld('planchette', {
   listApps: () => ipcRenderer.invoke('apps:list'),
   workspacePath: () => ipcRenderer.invoke('workspace:path'),
+  upgradeReport: () => ipcRenderer.invoke('workspace:upgrade-report'),
   listWorkspaces: () => ipcRenderer.invoke('workspace:list'),
   useWorkspace: (dir) => ipcRenderer.invoke('workspace:use', dir),
   forgetWorkspace: (dir) => ipcRenderer.invoke('workspace:forget', dir),
@@ -15,6 +16,19 @@ contextBridge.exposeInMainWorld('planchette', {
   reveal: (appId) => ipcRenderer.invoke('workspace:reveal', appId),
   createInterface: (name) => ipcRenderer.invoke('interface:create', name),
   describeMenu: () => ipcRenderer.invoke('menu:describe'),
+
+  // The physical table. Pucks and fingers arrive already mapped and calibrated.
+  tableConfig: () => ipcRenderer.invoke('table:get'),
+  tableConfigPath: () => ipcRenderer.invoke('table:path'),
+  saveTableConfig: (config) => ipcRenderer.invoke('table:save', config),
+  tuioStatus: () => ipcRenderer.invoke('tuio:status'),
+  onTuioFrame: (cb) => ipcRenderer.on('tuio:frame', (_e, frame) => cb(frame)),
+  onTuioControl: (cb) => ipcRenderer.on('tuio:control', (_e, ev) => cb(ev)),
+  onTuioStatus: (cb) => ipcRenderer.on('tuio:status', (_e, status) => cb(status)),
+  onTableChanged: (cb) => ipcRenderer.on('table:changed', (_e, config) => cb(config)),
+  onPicker: (cb) => ipcRenderer.on('app:picker', () => cb()),
+  onEnroll: (cb) => ipcRenderer.on('app:enroll', () => cb()),
+  onCalibrate: (cb) => ipcRenderer.on('app:calibrate', () => cb()),
 
   onAppsChanged: (cb) => ipcRenderer.on('apps:changed', (_e, appId) => cb(appId)),
   onReloadApp: (cb) => ipcRenderer.on('app:reload', () => cb()),

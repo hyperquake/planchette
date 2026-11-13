@@ -1,5 +1,6 @@
 import type { Puck, TableEventName, Touch } from '../sdk/types'
 import type { TableModel } from './model'
+import type { TuioStatus } from './tuio'
 import { DEG } from '../sdk/units'
 
 const MAX_LOG_ROWS = 400
@@ -20,6 +21,10 @@ export class Inspector {
   private pauseEl: HTMLInputElement
   private rows = 0
   private lastTables = 0
+  private tuioSection: HTMLElement
+  private tuioEl: HTMLElement
+  /** Raw tracker tag for a model puck id, when it came from a real table. */
+  tagFor: (id: number) => number | undefined = () => undefined
 
   constructor(
     root: HTMLElement,
@@ -31,6 +36,8 @@ export class Inspector {
     this.surfaceEl = root.querySelector('#surface-readout')!
     this.filterEl = root.querySelector('#log-filter')!
     this.pauseEl = root.querySelector('#log-pause')!
+    this.tuioSection = root.querySelector('#tuio-section')!
+    this.tuioEl = root.querySelector('#tuio-readout')!
     root.querySelector('#log-clear')!.addEventListener('click', () => {
       this.logEl.textContent = ''
       this.rows = 0
@@ -51,6 +58,45 @@ export class Inspector {
     ]
       .map(([k, v]) => `<div class="kv"><span>${k}</span><b>${v}</b></div>`)
       .join('')
+  }
+
+  /**
+   * What the tracker is doing. Shown only once TUIO is on, and built from text
+   * nodes: tag numbers and error strings come from the network.
+   */
+  setTuioStatus(s: TuioStatus | null): void {
+    this.tuioSection.hidden = !s || s.state === 'off'
+    if (!s || s.state === 'off') return
+    const rows: Array<[string, string]> = [
+      ['listening', s.state === 'listening' ? `${s.host}:${s.port}` : s.state],
+      ['packets', `${s.packetsPerSec}/s${s.badPackets ? `, ${s.badPackets} malformed` : ''}`],
+      [
+        'tags present',
+        s.tags
+          .map((t) =>
+            t.control
+              ? `${t.tag} (control)`
+              : t.markerId === null
+                ? `${t.tag} (unmapped)`
+                : `${t.tag} as ${t.markerId}`,
+          )
+          .join(', ') || 'none',
+      ],
+    ]
+    if (s.unknownTags.length) rows.push(['unmapped seen', s.unknownTags.join(', ')])
+    if (s.error) rows.push(['error', s.error])
+    this.tuioEl.replaceChildren(
+      ...rows.map(([k, v]) => {
+        const row = document.createElement('div')
+        row.className = 'kv'
+        const key = document.createElement('span')
+        key.textContent = k
+        const val = document.createElement('b')
+        val.textContent = v
+        row.append(key, val)
+        return row
+      }),
+    )
   }
 
   private log(name: TableEventName, data: Puck | Touch): void {
@@ -89,7 +135,7 @@ export class Inspector {
         .map((id) => this.model.publicPuck(id)!)
         .map(
           (p) =>
-            `<tr><td>${p.id}</td><td class="hi">${p.markerId}</td><td>${p.mmX.toFixed(0)}</td><td>${p.mmY.toFixed(0)}</td><td>${(p.angle * DEG).toFixed(0)}&deg;</td><td>${Math.hypot(p.vx, p.vy).toFixed(2)}</td></tr>`,
+            `<tr><td>${p.id}</td><td class="hi">${p.markerId}${this.tagFor(p.id) !== undefined ? `<span class="tag"> t${this.tagFor(p.id)}</span>` : ''}</td><td>${p.mmX.toFixed(0)}</td><td>${p.mmY.toFixed(0)}</td><td>${(p.angle * DEG).toFixed(0)}&deg;</td><td>${Math.hypot(p.vx, p.vy).toFixed(2)}</td></tr>`,
         )
         .join('') || '<tr class="empty"><td colspan="6">no pucks on the surface</td></tr>'
 

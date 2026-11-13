@@ -23,3 +23,8 @@ public/favicon.svg
 site/_build
 site/.cache
 site/reel/guests
+
+# Byte-for-byte records of what released versions shipped. Workspace upgrades
+# compare hashes against these, so reformatting either one would break them.
+scripts/seed-history.json
+test/fixtures

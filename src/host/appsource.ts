@@ -11,6 +11,9 @@
  * downstream has to.
  */
 
+import type { UpgradeReport } from './notice'
+import type { TableConfig, TuioControlEvent, TuioFrame, TuioStatus } from './tuio'
+
 /** Implemented by electron/preload.cjs. Absent in a plain browser. */
 export interface WorkspaceList {
   current: string
@@ -21,6 +24,7 @@ export interface WorkspaceList {
 export interface DesktopBridge {
   listApps(): Promise<string[]>
   workspacePath(): Promise<string>
+  upgradeReport(): Promise<UpgradeReport | null>
   listWorkspaces(): Promise<WorkspaceList>
   useWorkspace(dir: string): Promise<WorkspaceList>
   forgetWorkspace(dir: string): Promise<WorkspaceList>
@@ -28,6 +32,17 @@ export interface DesktopBridge {
   reveal(appId?: string): Promise<void>
   createInterface(name: string): Promise<string>
   describeMenu(): Promise<unknown>
+  tableConfig(): Promise<TableConfig>
+  tableConfigPath(): Promise<string>
+  saveTableConfig(config: TableConfig): Promise<TableConfig>
+  tuioStatus(): Promise<TuioStatus | null>
+  onTuioFrame(cb: (frame: TuioFrame) => void): void
+  onTuioControl(cb: (ev: TuioControlEvent) => void): void
+  onTuioStatus(cb: (status: TuioStatus) => void): void
+  onTableChanged(cb: (config: TableConfig) => void): void
+  onPicker(cb: () => void): void
+  onEnroll(cb: () => void): void
+  onCalibrate(cb: () => void): void
   onAppsChanged(cb: (appId: string | null) => void): void
   onReloadApp(cb: () => void): void
   onChooseWorkspace(cb: () => void): void
@@ -47,6 +62,8 @@ export interface Workspace {
   choose(): Promise<WorkspaceList | null>
   reveal(appId?: string): Promise<void>
   createInterface(name: string): Promise<string>
+  /** What opening this workspace upgraded, once; null after that or if nothing. */
+  upgradeReport(): Promise<UpgradeReport | null>
 }
 
 export interface AppSource {
@@ -100,6 +117,7 @@ function desktopSource(bridge: DesktopBridge): AppSource {
       choose: () => bridge.chooseWorkspace(),
       reveal: (appId) => bridge.reveal(appId),
       createInterface: (name) => bridge.createInterface(name),
+      upgradeReport: () => bridge.upgradeReport(),
     },
   }
 }
