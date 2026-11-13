@@ -10,6 +10,12 @@ from one version to the next.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.2.0-beta.1] - 2026-11-13
+
+A beta of 0.2.0, for testing on a real table. Published as a pre-release.
+
 ### Added
 
 - **Run interfaces on a real table.** The desktop app listens for TUIO 1.1 from
@@ -115,6 +121,7 @@ First release.
 - Four surface presets, an inspector showing raw wire values, and puck
   arrangements that survive a reload.
 
-[Unreleased]: https://github.com/Potion/planchette/compare/v0.1.1...HEAD
-[0.1.1]: https://github.com/Potion/planchette/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/Potion/planchette/releases/tag/v0.1.0
+[Unreleased]: https://github.com/hyperquake/planchette/compare/v0.2.0-beta.1...HEAD
+[0.2.0-beta.1]: https://github.com/hyperquake/planchette/compare/v0.1.1...v0.2.0-beta.1
+[0.1.1]: https://github.com/hyperquake/planchette/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/hyperquake/planchette/releases/tag/v0.1.0
