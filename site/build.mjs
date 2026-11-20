@@ -62,6 +62,8 @@ const MEDIA = [
   'arcane-table.jpg',
   'radial-atlas.jpg',
   'dial-demo.jpg',
+  'riftfall.jpg',
+  'air-hockey.jpg',
   'app-inspector.jpg',
   'hyperquake-logotype-black.png',
 ]

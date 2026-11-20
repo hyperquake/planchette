@@ -13,6 +13,9 @@
  * `posterAt` (first scene that has one) picks the page's poster frame, and `still`
  * writes media/<id>.jpg for the examples gallery. Both are seconds into the scene.
  *
+ * `inject`, if present, runs in every frame of every page before it loads, for
+ * recording-only hooks; it must check which page it is on.
+ *
  * `setup` installs window.__k, a small keyframe helper:
  *   __k(t, [[t0, v0], [t1, v1], ...])  eased value at time t
  */
@@ -177,6 +180,142 @@ export const SCENES = [
       __touch(s, 'a', t, 2.7, 3.05, [[2.7, ax, ay]])
       const [bx, by] = at(800, 330, -45)
       __touch(s, 'b', t, 3.6, 3.95, [[3.6, bx, by]])
+    },
+  },
+  // Two games designers made on a testing day, just for fun. Their code lives in
+  // guests/ (not in git); see record.mjs. Both are played by a script that reads
+  // the game's state, so the turrets and mallets respond to what actually happens.
+  {
+    id: 'riftfall',
+    url: embed('dial-demo'),
+    guest: 'riftfall',
+    guestSettleMs: 4000, // waits for the pixel font
+    seconds: 11.5,
+    still: 9,
+    setup: prelude,
+    frame(t, s) {
+      const g = document.getElementById('appframe').contentWindow.riftfall
+      if (!g) return
+      const turrets = [
+        { m: 1, x: 420, y: 585 },
+        { m: 2, x: 800, y: 585 },
+        { m: 3, x: 610, y: 100 },
+      ]
+      if (!s.ids) {
+        s.ids = turrets.map((p) => sim.addPuck({ markerId: p.m, mmX: p.x, mmY: p.y, angleDeg: p.y > 300 ? 0 : 180 }))
+        s.aim = turrets.map((p) => (p.y > 300 ? 0 : 180))
+      }
+      // Aim each turret at the warhead nearest it, leading the shot, turning at
+      // a believable hand speed rather than snapping.
+      turrets.forEach((p, i) => {
+        let best = null
+        for (const w of g.warheads) {
+          if (w.dead) continue
+          const d = Math.hypot(w.x - p.x, w.y - p.y)
+          if (!best || d < best.d) best = { w, d }
+        }
+        if (!best) return
+        const lead = best.d / 750
+        const tx = best.w.x + best.w.ux * best.w.speed * lead
+        const ty = best.w.y + best.w.uy * best.w.speed * lead
+        const want = (Math.atan2(tx - p.x, -(ty - p.y)) * 180) / Math.PI
+        let delta = ((((want - s.aim[i]) % 360) + 540) % 360) - 180
+        delta = Math.max(-12, Math.min(12, delta))
+        s.aim[i] += delta
+        sim.movePuck(s.ids[i], { angleDeg: s.aim[i] })
+      })
+      // Tap power buttons where the game says they are: the first one starts
+      // the game, then everyone switches on as the first wave arrives.
+      const tap = (key, i, t0) => {
+        const b = g.buttonPos(turrets[i].x, turrets[i].y)
+        __touch(s, key, t, t0, t0 + 0.2, [[t0, b.x, b.y]])
+      }
+      tap('a1', 0, 0.6)
+      tap('a2', 0, 1.3)
+      tap('a3', 0, 3.0)
+      tap('b', 1, 3.1)
+      tap('c', 2, 3.2)
+    },
+  },
+  {
+    id: 'air-hockey',
+    url: embed('dial-demo'),
+    guest: 'air-hockey',
+    seconds: 9,
+    still: 4,
+    // Air hockey keeps its puck private. It draws it with a 27.5mm radius, which
+    // nothing else on that canvas uses, so note where that circle is drawn.
+    inject() {
+      if (!location.pathname.includes('/air-hockey/')) return
+      const arc = CanvasRenderingContext2D.prototype.arc
+      CanvasRenderingContext2D.prototype.arc = function (x, y, r, ...rest) {
+        if (r === 27.5) window.__hockeyPuck = { x, y, at: performance.now() }
+        return arc.call(this, x, y, r, ...rest)
+      }
+    },
+    setup: prelude,
+    frame(t, s) {
+      const W = 1218
+      const H = 685
+      const app = document.getElementById('appframe').contentWindow
+      const seen = app.__hockeyPuck
+      const P = seen && app.performance.now() - seen.at < 100 ? seen : null
+      if (!s.m) {
+        s.m = {
+          w: { id: sim.addPuck({ markerId: 1, mmX: 130, mmY: H / 2 }), x: 130, y: H / 2, aimY: 0 },
+          e: { id: sim.addPuck({ markerId: 2, mmX: W - 130, mmY: H / 2 }), x: W - 130, y: H / 2, aimY: 0 },
+        }
+      }
+      const R = 30 + 27.5
+      for (const side of ['w', 'e']) {
+        const m = s.m[side]
+        const home = side === 'w' ? 130 : W - 130
+        const oppX = side === 'w' ? W : 0
+        // The puck faces off exactly on the centre line; west takes it.
+        const mine = P && (side === 'w' ? P.x <= W / 2 : P.x > W / 2)
+        let tx = home
+        let ty = P ? Math.max(H / 2 - 130, Math.min(H / 2 + 130, P.y)) : H / 2
+        let speed = 900
+        if (mine) {
+          // Pick a spot in the far goal, aiming off the walls now and then.
+          if (!m.aimY || m.shotAt !== s.shots) m.aimY = H / 2 + (Math.random() - 0.5) * 260
+          let gx = oppX - P.x
+          let gy = m.aimY - P.y
+          const gl = Math.hypot(gx, gy)
+          gx /= gl
+          gy /= gl
+          const front = (m.x - P.x) * gx + (m.y - P.y) * gy > -R * 0.5
+          if (front) {
+            // In front of the puck: go round it, not through it toward our own goal.
+            const px = -gy
+            const py = gx
+            const sgn = (m.x - P.x) * px + (m.y - P.y) * py >= 0 ? 1 : -1
+            tx = P.x - gx * R + px * sgn * (R + 45)
+            ty = P.y - gy * R + py * sgn * (R + 45)
+            speed = 1500
+          } else if (Math.hypot(m.x - (P.x - gx * (R + 20)), m.y - (P.y - gy * (R + 20))) > 25) {
+            tx = P.x - gx * (R + 20)
+            ty = P.y - gy * (R + 20)
+            speed = 1600
+          } else {
+            tx = P.x + gx * 140
+            ty = P.y + gy * 140
+            speed = 2600
+            s.shots = (s.shots ?? 0) + 0.02
+          }
+        }
+        const dx = tx - m.x
+        const dy = ty - m.y
+        const d = Math.hypot(dx, dy)
+        const step = Math.min(d, speed / 30)
+        if (d > 0.5) {
+          m.x += (dx / d) * step
+          m.y += (dy / d) * step
+        }
+        m.x = side === 'w' ? Math.max(35, Math.min(W / 2 - 35, m.x)) : Math.max(W / 2 + 35, Math.min(W - 35, m.x))
+        m.y = Math.max(35, Math.min(H - 35, m.y))
+        sim.movePuck(m.id, { mmX: m.x, mmY: m.y })
+      }
     },
   },
   {

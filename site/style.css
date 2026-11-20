@@ -88,6 +88,9 @@ section h2 { font-size: clamp(30px, 4vw, 44px); line-height: 1.1; }
 .shot { width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--grey2); }
 
 .story { display: grid; grid-template-columns: 1fr 1.6fr; gap: 48px; align-items: start; }
+.story .cards { grid-column: 1 / -1; margin-top: 8px; }
+.cards.two { grid-template-columns: repeat(2, 1fr); }
+.cards-note { grid-column: 1 / -1; margin-top: -24px; font-size: 15px; color: var(--grey3); }
 .story-body { display: grid; gap: 20px; font-size: 21px; line-height: 1.45; }
 
 .examples h2 { margin-bottom: 32px; }
@@ -115,7 +118,8 @@ footer { margin-top: 120px; padding: 32px 0 48px; border-top: 1px solid var(--gr
 /* ---------------- small screens ---------------- */
 
 @media (max-width: 860px) {
-  .points, .cards, .platforms, .story, .why { grid-template-columns: 1fr; gap: 32px; }
+  .points, .cards, .cards.two, .platforms, .story, .why { grid-template-columns: 1fr; gap: 32px; }
+  .cards-note { margin-top: -8px; }
   .download { padding: 32px 20px; }
   section + section { margin-top: 80px; }
 }
