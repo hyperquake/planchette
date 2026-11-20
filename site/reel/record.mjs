@@ -17,6 +17,11 @@
  * The one thing the shim cannot slow down is CSS transitions, which run on the
  * real clock. The examples only use short fades, so they read slightly quicker.
  *
+ * Designers' own interfaces can join the reel from site/reel/guests/<id>/, which
+ * is not in git: their authors decide what is published as code. Riftfall and
+ * air hockey came from a designers' testing day (Slack, 2026-11-19); without
+ * them, those two scenes cannot be re-recorded and should be removed from scenes.mjs.
+ *
  * Needs Google Chrome and ffmpeg. Scenes, and their choreography in millimetres
  * and degrees through window.sim, are in scenes.mjs.
  */
@@ -32,12 +37,19 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(here, '../..')
 const dist = path.join(root, 'dist')
 const media = path.join(root, 'site', 'media')
+const guests = path.join(here, 'guests')
 
 const args = process.argv.slice(2)
 const stills = args.includes('--stills')
 const shots = args.includes('--shots')
 const only = args.includes('--scene') ? args[args.indexOf('--scene') + 1] : null
 const CHROME = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+
+/** A method's source ("frame(t, s) {...}") is not an expression; make it one. */
+const source = (fn) => {
+  const src = fn.toString()
+  return /^(async\s+)?(function\b|\()/.test(src) ? src : `function ${src}`
+}
 
 /* ---------------- static server for dist/ and the title cards ---------------- */
 
@@ -55,9 +67,23 @@ const MIME = {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x')
   // /cards/ serves this folder, /brand/ the repo's marks, everything else dist/.
+  // Interfaces in guests/ (designers' work, not in git) are served as examples.
   let base = dist
   let rel = decodeURIComponent(url.pathname)
-  if (rel.startsWith('/cards/')) [base, rel] = [here, rel.slice('/cards'.length)]
+  const guest = rel.match(/^\/examples\/([^/]+)\//)
+  if (guest && (await fs.stat(path.join(guests, guest[1])).catch(() => null))) {
+    ;[base, rel] = [guests, rel.slice('/examples'.length)]
+    // A raw interface imports bare specifiers; give it the same import map the
+    // desktop app injects, pointing at dist's self-contained builds.
+    if (rel.endsWith('/index.html')) {
+      const file = path.join(base, path.normalize(rel))
+      if (!file.startsWith(base)) return res.writeHead(403).end()
+      const html = await fs.readFile(file, 'utf8').catch(() => null)
+      if (html === null) return res.writeHead(404).end()
+      const map = '<script type="importmap">{"imports":{"@planchette/sdk":"/sdk.js","three":"/three.js"}}</script>'
+      return res.writeHead(200, { 'content-type': 'text/html' }).end(html.replace(/<head>/i, `<head>${map}`))
+    }
+  } else if (rel.startsWith('/cards/')) [base, rel] = [here, rel.slice('/cards'.length)]
   else if (rel.startsWith('/media/')) [base, rel] = [media, rel.slice('/media'.length)]
   else if (rel.startsWith('/brand/')) [base, rel] = [path.join(root, 'brand'), rel.slice('/brand'.length)]
   const file = path.join(base, path.normalize(rel))
@@ -167,14 +193,12 @@ listeners.add(
 )
 await send('Emulation.setDeviceMetricsOverride', { width: WIDTH, height: HEIGHT, deviceScaleFactor: 1, mobile: false })
 await send('Page.addScriptToEvaluateOnNewDocument', { source: CLOCK })
+// Recording-only hooks a scene needs inside an interface, such as reading state
+// the interface keeps private. Each one checks its own page before acting.
+for (const s of SCENES)
+  if (s.inject) await send('Page.addScriptToEvaluateOnNewDocument', { source: `(${source(s.inject)})()` })
 
 /* ---------------- record ---------------- */
-
-/** A method's source ("frame(t, s) {...}") is not an expression; make it one. */
-const source = (fn) => {
-  const src = fn.toString()
-  return /^(async\s+)?(function\b|\()/.test(src) ? src : `function ${src}`
-}
 
 async function record(scene, dir) {
   const loaded = once('Page.loadEventFired')
@@ -182,6 +206,12 @@ async function record(scene, dir) {
   await loaded
   // Real time until the interface has loaded its content and said hello.
   await sleep(scene.settleMs ?? 2500)
+  // A guest interface is not in the build's list, so the host would fall back to
+  // dial-demo. Point its frame at the guest directly; the handshake does not care.
+  if (scene.guest) {
+    await evaluate(`document.getElementById('appframe').src = './examples/${scene.guest}/index.html'`)
+    await sleep(scene.guestSettleMs ?? 3000)
+  }
   // The full app opens whatever it last showed; ?app= only applies to embeds.
   if (scene.app) {
     await evaluate(`sim.loadApp(${JSON.stringify(scene.app)})`)

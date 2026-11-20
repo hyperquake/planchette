@@ -22,3 +22,4 @@ public/favicon.svg
 # The site build output and its cached copy of a release web build.
 site/_build
 site/.cache
+site/reel/guests
