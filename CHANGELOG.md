@@ -10,7 +10,11 @@ from one version to the next.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- On Windows, editing an interface did not reload it when the workspace path
+  contained a short (8.3) folder name, such as `C:\Users\RUNNER~1\...`. The
+  watcher now follows the folder's full path.
 
 ## [0.1.1] - 2026-08-26
 

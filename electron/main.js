@@ -427,6 +427,11 @@ let watcher = null
  * Tell the renderer when workspace files change, so it can reload just the app
  * iframe. Built-in fs.watch is enough here: recursive mode is supported on both
  * macOS and Windows, which keeps the packaged app free of runtime dependencies.
+ *
+ * Watch the canonical path, not the one we were given. On Windows a path with an
+ * 8.3 short-name component (C:\Users\RUNNER~1\..., which is what os.tmpdir()
+ * returns for long user names) breaks recursive fs.watch: the change never
+ * reaches us as an edit inside the app's folder, so nothing reloads.
  */
 function watchWorkspace() {
   watcher?.close()
@@ -435,7 +440,13 @@ function watchWorkspace() {
   let lastApp = null
 
   try {
-    watcher = fs.watch(workspace, { recursive: true }, (_event, filename) => {
+    let target = workspace
+    try {
+      target = fs.realpathSync.native(workspace)
+    } catch {
+      // Missing folder: let fs.watch below report it.
+    }
+    watcher = fs.watch(target, { recursive: true }, (_event, filename) => {
       if (filename) {
         const first = String(filename).split(path.sep)[0]
         lastApp = first || null
