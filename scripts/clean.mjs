@@ -1,10 +1,9 @@
 /**
  * Remove every generated directory.
  *
- * Exists mainly for self-hosted runners: they keep their working directory
- * between runs, and release/ is gitignored, so `actions/checkout` will not clear
- * it. Stale artifacts from an older version would then be picked up by an upload
- * glob and shipped alongside the new ones. Node rather than `rm -rf` so the same
+ * Exists mainly for local builds: release/ and the other generated folders are
+ * gitignored, so they survive between builds, and stale artifacts from an older
+ * version would be picked up alongside the new ones. Node rather than `rm -rf` so the same
  * command works on Windows.
  */
 import { rm } from 'node:fs/promises'

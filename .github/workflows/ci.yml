@@ -1,9 +1,8 @@
 name: CI
 
-# Runs on the org-level self-hosted runners, the same pair conflower-player uses:
-#   [self-hosted, macOS]    -> Brooklyn-Studio
-#   [self-hosted, Windows]  -> PROTO1-P8
-# Packaging is deliberately not done here; see release.yml.
+# Runs on GitHub-hosted runners, never on our own machines: the repository is
+# public, and a pull request from a fork runs its own code in this workflow.
+# See docs/RUNNERS.md. Packaging is deliberately not done here; see release.yml.
 
 on:
   push:
@@ -11,28 +10,29 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   macos:
-    runs-on: [self-hosted, macOS]
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
-      # Self-hosted runners keep their working directory, and the generated
-      # folders are gitignored so checkout leaves them behind.
-      - run: npm run clean
+          cache: npm
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
       - run: npm run check
       - run: npm run build
       - run: npm run build:seed
-      # Opens a real window, so the runner needs a logged-in desktop session.
+      # Opens a real window; GitHub's macOS runners have a desktop session.
       # Gating here: this is the job that proves the packaged shell still works.
       - run: npm run smoke
       # The embeddable web build is a shipped artifact, so it gets the same
@@ -41,25 +41,20 @@ jobs:
       - run: npm run smoke:embed
 
   windows:
-    runs-on: [self-hosted, Windows]
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
-      - run: npm run clean
+          cache: npm
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
       - run: npm run check
       - run: npm run build
       - run: npm run build:seed
-      # Gating: PROTO1-P8 runs in a logged-in session. If the runner is ever
-      # re-registered as a Windows service it will lose its interactive desktop
-      # and this needs continue-on-error.
       - run: npm run smoke
       # The embed artifact is platform independent, so running it on both runners
-      # is redundant in principle. It runs here anyway: it is the only place it
-      # gets exercised while Brooklyn-Studio is offline, and redundant coverage is
-      # cheaper than none.
+      # is redundant in principle; it is cheap, so it runs on both.
       - run: npm run smoke:embed

@@ -371,6 +371,8 @@ try {
   await evaluate("document.getElementById('appframe').contentWindow.__smokeStamp = 1; return 1")
   const stampBefore = await evaluate("return document.getElementById('appframe').contentWindow.__smokeStamp ?? null")
   await fs.appendFile(path.join(workspace, 'dial-demo', 'main.js'), '\n// smoke edit\n')
+  // A temp dir with an 8.3 short name (Windows runners: C:\Users\RUNNER~1\...)
+  // is the case that once broke this; see watchWorkspace in electron/main.js.
   const reloaded = await evaluate(`
     for (let i = 0; i < 60; i++) {
       if (document.getElementById('appframe').contentWindow.__smokeStamp === undefined) return true;

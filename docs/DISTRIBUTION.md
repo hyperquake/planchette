@@ -43,9 +43,8 @@ map, theirs is merged and their mapping wins, since a document may only have one
 Both run `npm run prepackage` first, which builds the host bundle, the standalone
 SDK, the type declarations, and the workspace seed.
 
-`.github/workflows/release.yml` builds and publishes both platforms on the
-org-level self-hosted runners. See `RUNNERS.md` for which machines those are and
-the one permission that has to be granted.
+`.github/workflows/release.yml` builds and publishes both platforms on
+GitHub-hosted runners. See `RUNNERS.md` for why never our own machines.
 
 ### One gotcha with npm 11 install scripts
 
@@ -78,9 +77,8 @@ JavaScript MIME type, the injected import map actually resolving `@planchette/sd
 path traversal out of the workspace being refused, the file watcher reloading the
 app, and pucks surviving that reload.
 
-It opens a window, so it needs an interactive desktop session. In CI it gates the
-macOS job and is advisory on Windows, since self-hosted Windows runners often run
-as a service with no desktop.
+It opens a window, so it needs an interactive desktop session. GitHub's hosted
+runners have one; in CI it gates both jobs, and in a release it is advisory.
 
 ## Icons
 
@@ -129,7 +127,8 @@ Nothing here needs rework.
 
 - **macOS**: get an Apple Developer ID, remove `mac.identity: null` from
   `electron-builder.yml`, and set `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, and
-  `APPLE_TEAM_ID` on the runner so electron-builder notarizes. The ad-hoc hook
+  `APPLE_TEAM_ID` as repository secrets passed to the release job's environment, so
+  electron-builder notarizes. The ad-hoc hook
   becomes a no-op you can delete.
 - **Windows**: add a `win.certificateFile` or use a signing service, and drop the
   SmartScreen instructions.
