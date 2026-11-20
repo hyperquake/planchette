@@ -18,3 +18,7 @@ package-lock.json
 # Generated from geometry by brand/tools/make-icons.py rather than hand-edited.
 brand/*.svg
 public/favicon.svg
+
+# The site build output and its cached copy of a release web build.
+site/_build
+site/.cache

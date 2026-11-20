@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Planchette: design for the table, without the table</title>
+  <meta name="description" content="Planchette is a free simulator for multitouch tables with physical pucks. Design and try table interfaces on your laptop, then run the same thing on the real table. Made by Hyperquake.">
+  <meta property="og:title" content="Planchette">
+  <meta property="og:description" content="Design for the table, without the table. A free touch table simulator from Hyperquake.">
+  <meta property="og:image" content="media/loop-poster.jpg">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top wrap">
+  <a class="brand" href="#"><img src="brand/lockup-horizontal-black.svg" alt="Planchette" width="186" height="33"></a>
+  <nav>
+    <a href="#try">Try it</a>
+    <a href="#examples">Examples</a>
+    <a href="#download">Download</a>
+    <a href="https://github.com/hyperquake/planchette">GitHub</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <h1>Design for the table, without the table.</h1>
+    <p class="lede">
+      Planchette is a free simulator for multitouch tables: the big interactive surfaces
+      in museums, showrooms and exhibits, where people gather round and use their hands
+      and real objects at once. Put pucks on it, touch it, turn things, and see exactly
+      what the table will show. Then take the same interface to the real thing.
+    </p>
+    <div class="actions">
+      <a class="button primary" href="#download">Download for Mac or Windows</a>
+      <a class="button big-only" href="#try">Try it in your browser</a>
+    </div>
+  </section>
+
+  <section class="reel wrap" aria-label="Planchette in motion">
+    <video autoplay muted loop playsinline preload="metadata" poster="media/loop-poster.jpg">
+      <source src="media/loop.webm" type="video/webm">
+      <source src="media/loop.mp4" type="video/mp4">
+    </video>
+  </section>
+
+  <section class="points wrap">
+    <div>
+      <h2>True to size</h2>
+      <p>
+        A touch table is a metre and a quarter wide. Planchette lays every interface out
+        at the table's real resolution and measures it in real millimetres, so a button
+        that looks right here is the right size under someone's finger.
+      </p>
+    </div>
+    <div>
+      <h2>Objects, not just fingers</h2>
+      <p>
+        The table recognises physical pucks: where each one is, which way it faces and
+        which one it is. Place them, slide them and spin them, alongside as many fingers
+        as you like, the way a group of people really would.
+      </p>
+    </div>
+    <div>
+      <h2>Then run it on the table</h2>
+      <p>
+        An interface is a plain web page. When it's ready, the same files run on the real
+        table, with no rebuild and no translation. Planchette is the place you get it
+        right before you get there.
+      </p>
+    </div>
+  </section>
+
+  <section id="try" class="try wrap">
+    <div class="section-head">
+      <h2>Try it right here</h2>
+      <p>
+        This is the real simulator, running one of the examples. Drag the puck to move it.
+        Scroll over it to turn it, then click a ring to open what it's pointing at.
+      </p>
+    </div>
+    <div class="frame" data-embed>
+      <iframe title="Planchette simulator running the Radial atlas example" loading="lazy"></iframe>
+    </div>
+    <p class="small-only">The live demo needs a bigger screen. The reel above shows it in motion.</p>
+  </section>
+
+  <section class="app wrap">
+    <div class="section-head">
+      <h2>The whole table, on your laptop</h2>
+      <p>
+        Pick an interface, drop pucks on it and try it with several hands at once. The
+        panel on the right shows everything the interface is told, as it happens, so
+        when something looks wrong you can see why.
+      </p>
+    </div>
+    <img class="shot" src="media/app-inspector.jpg" alt="The Planchette app: a toolbar along the top, the Arcane table example with four pucks in the middle, and a panel on the right listing the pucks, touches and events" width="2880" height="1720" loading="lazy">
+  </section>
+
+  <section class="story wrap">
+    <h2>Designers build it themselves</h2>
+    <div class="story-body">
+      <p>
+        At Hyperquake, designers have been making table interfaces on their own. They
+        describe what they want to an AI coding agent, watch it appear in Planchette, play
+        with it, change their minds, and carry the result to the real table to test. No
+        waiting for a developer to turn a sketch into something you can touch.
+      </p>
+      <p>
+        That works because every Planchette workspace comes with guidance written for the
+        agent: how big things should be, what a puck can do, what the table will and
+        won't tolerate. It knows the rules of the surface from the first prompt.
+      </p>
+    </div>
+  </section>
+
+  <section id="examples" class="examples wrap">
+    <h2>What's in the box</h2>
+    <div class="cards">
+      <figure>
+        <img src="media/arcane-table.jpg" alt="Three pucks on a dark field, runes circling each, with lightning arcing between them" loading="lazy">
+        <figcaption><strong>Arcane table.</strong> Runes bloom around every puck, and lightning arcs between pucks that come near each other.</figcaption>
+      </figure>
+      <figure>
+        <img src="media/radial-atlas.jpg" alt="A puck with a ring of menu items around it, and an opened image plate beside it" loading="lazy">
+        <figcaption><strong>Radial atlas.</strong> Turn a puck to browse a collection, tap its ring to go deeper and open a plate.</figcaption>
+      </figure>
+      <figure>
+        <img src="media/dial-demo.jpg" alt="Two pucks, each with a ring of options, one option highlighted on each" loading="lazy">
+        <figcaption><strong>Dial demo.</strong> Every puck becomes a dial. The simplest complete example, and the place to start.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="download" class="download wrap">
+    <div class="section-head">
+      <h2>Get Planchette</h2>
+      <p>Free, for macOS and Windows. Version {{VERSION}}{{CHANNEL}}.</p>
+    </div>
+    <div class="platforms">
+      <div class="platform">
+        <h3>Mac</h3>
+        <a class="button primary" href="https://github.com/hyperquake/planchette/releases/download/v{{VERSION}}/Planchette-{{VERSION}}-arm64.dmg">Apple silicon</a>
+        <a class="button" href="https://github.com/hyperquake/planchette/releases/download/v{{VERSION}}/Planchette-{{VERSION}}.dmg">Intel</a>
+        <p class="note">
+          <strong>Opening it the first time.</strong> Planchette isn't notarized by Apple yet,
+          so macOS will hesitate. Right-click the app and choose Open. On macOS 15 and
+          later, try to open it once, then go to System Settings, Privacy &amp; Security,
+          and click Open Anyway. Once per machine.
+        </p>
+      </div>
+      <div class="platform">
+        <h3>Windows</h3>
+        <a class="button primary" href="https://github.com/hyperquake/planchette/releases/download/v{{VERSION}}/Planchette-{{VERSION}}-setup.exe">Installer</a>
+        <a class="button" href="https://github.com/hyperquake/planchette/releases/download/v{{VERSION}}/Planchette.{{VERSION}}.exe">Portable</a>
+        <p class="note">
+          <strong>Opening it the first time.</strong> The app isn't code signed yet, so
+          Windows may say it protected your PC. Click More info, then Run anyway. Once
+          per machine.
+        </p>
+      </div>
+    </div>
+    <p class="after">
+      New to it? The <a href="https://github.com/hyperquake/planchette/blob/main/docs/GETTING-STARTED.md">getting started guide</a>
+      takes you from install to your first interface. Older versions and release notes are on
+      <a href="https://github.com/hyperquake/planchette/releases">GitHub</a>.
+    </p>
+  </section>
+
+  <section class="why wrap">
+    <h2>Why it's free</h2>
+    <p>
+      Hyperquake designs and builds interactive installations, touch tables included. We
+      made Planchette to design our own, and we're giving it away because the work gets
+      better when more people can design for these surfaces. It's open source under the
+      MIT license. Found a bug? <a href="https://github.com/hyperquake/planchette/issues">Tell us on GitHub</a>.
+    </p>
+  </section>
+</main>
+
+<footer class="wrap">
+  <a class="by" href="https://hyperquake.com">Made by <img src="media/hyperquake-logotype-black.png" alt="Hyperquake" width="160" height="17"></a>
+</footer>
+
+<script>
+  // The embed crops the table so its type is legible, and how much to crop depends
+  // on how wide the frame is. Type in the examples is about 4.6mm; at zoom 0.62 it
+  // renders near 9px in a 1080px frame (docs/EMBED.md), so scale from there.
+  const frame = document.querySelector('[data-embed]')
+  if (frame && matchMedia('(min-width: 720px)').matches) {
+    const zoom = Math.min(0.8, Math.max(0.45, (frame.clientWidth / 1080) * 0.62)).toFixed(2)
+    frame.querySelector('iframe').src = `embed/?embed=1&app=radial-atlas&zoom=${zoom}&center=0.42,0.5`
+  }
+</script>
+</body>
+</html>
