@@ -5,10 +5,8 @@
 # from anywhere else is not possible. The two jobs are independent and each
 # publishes its own assets, so one platform failing does not block the other.
 #
-# Runners are the org-level pair, the same ones conflower-player uses:
-#   [self-hosted, macOS]    -> Brooklyn-Studio
-#   [self-hosted, Windows]  -> PROTO1-P8
-# The org runner group must grant this repository access.
+# Runs on GitHub-hosted runners, never on our own machines (docs/RUNNERS.md).
+# Only people with write access can trigger it: a tag push or a manual run.
 #
 # To ship:
 #   npm version 0.2.0 --no-git-tag-version
@@ -34,14 +32,14 @@ env:
   # The tag being released, whether this was a tag push or a manual re-run.
   TAG: ${{ github.event.inputs.ref || github.ref_name }}
 
-# One release at a time: both jobs reuse a working directory on their machine.
+# One release at a time, so two runs never race to publish the same tag.
 concurrency:
   group: release
   cancel-in-progress: false
 
 jobs:
   macos:
-    runs-on: [self-hosted, macOS]
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
         with:
@@ -63,12 +61,6 @@ jobs:
             exit 1
           fi
           echo "runner arch: $arch"
-
-      # A self-hosted runner keeps its working directory between runs, and the
-      # generated folders are gitignored, so checkout leaves them in place. Stale
-      # artifacts from an older version would otherwise be swept up by the
-      # release upload below.
-      - run: npm run clean
 
       - run: npm ci
 
@@ -131,7 +123,7 @@ jobs:
           if-no-files-found: error
 
   windows:
-    runs-on: [self-hosted, Windows]
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
         with:
@@ -141,7 +133,6 @@ jobs:
         with:
           node-version: '24'
 
-      - run: npm run clean
       - run: npm ci
 
       - name: Tag must match package.json
@@ -157,8 +148,7 @@ jobs:
       - run: npm run check
       - run: npm run prepackage
 
-      # A Windows runner registered as a service has no interactive desktop, and
-      # the smoke test cannot open a window without one.
+      # Advisory, as on the mac job: ci.yml is where this gates.
       - name: Smoke test
         continue-on-error: true
         run: npm run smoke
@@ -166,9 +156,8 @@ jobs:
       # See the mac job: build only, publish explicitly below.
       - run: npx electron-builder --win --publish never
 
-      # A javascript action rather than the gh cli: gh is not installed on this
-      # runner, and assuming a cli exists on a hand-provisioned machine is how the
-      # first release attempt failed. This needs nothing but the runner's own node.
+      # A javascript action rather than the gh cli, so it needs nothing but the
+      # runner's own node.
       - name: Publish release assets
         if: startsWith(env.TAG, 'v')
         uses: softprops/action-gh-release@v2
