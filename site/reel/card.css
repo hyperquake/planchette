@@ -1,0 +1,13 @@
+/* Title cards for the reel. Rendered at 1920x1080 by record.mjs. */
+html, body { margin: 0; height: 100%; background: #fff; color: #000; }
+body {
+  font-family: "Untitled Sans", Helvetica, Arial, sans-serif;
+  display: grid; place-items: center; overflow: hidden;
+}
+.card { display: grid; justify-items: center; gap: 56px; text-align: center; }
+.mark { width: 168px; height: auto; }
+.lockup { width: 760px; height: auto; }
+h1 { font-weight: 400; font-size: 92px; line-height: 1.1; margin: 0; }
+p { font-size: 40px; line-height: 1.2; color: #808080; margin: 0; }
+.by { display: flex; align-items: center; gap: 28px; font-size: 36px; color: #808080; margin-top: 40px; }
+.by img { height: 40px; }

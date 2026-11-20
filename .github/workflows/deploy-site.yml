@@ -1,0 +1,41 @@
+# Builds site/ and deploys it to the Cloudflare Pages project `planchette` in the
+# Hyperquake account. See site/build.mjs for what the build does.
+#
+# Runs when the site changes on main, and whenever a release is published, because
+# the page always offers the newest release and its live demo is that release's
+# web build. Never on pull requests: the deploy token must not be reachable from
+# a fork, so there is deliberately no pull_request or pull_request_target trigger.
+name: deploy site
+
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', 'brand/**', '.github/workflows/deploy-site.yml']
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-site
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Build
+        run: node site/build.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy to Cloudflare Pages
+        run: npx --yes wrangler@4.166.0 pages deploy site/_build --project-name planchette --branch main --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 94101aa2f0abc6010708f574836bfdf5
