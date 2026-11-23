@@ -30,6 +30,7 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run check
+      - run: npm test
       - run: npm run build
       - run: npm run build:seed
       # Opens a real window; GitHub's macOS runners have a desktop session.
@@ -52,6 +53,7 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run check
+      - run: npm test
       - run: npm run build
       - run: npm run build:seed
       - run: npm run smoke

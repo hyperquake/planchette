@@ -9,7 +9,7 @@ import {
 } from './types'
 import { clamp01, nearestEdge, wrapAngle } from './units'
 
-export const SDK_VERSION = '0.1.0'
+export const SDK_VERSION = '0.2.0-beta.1'
 
 /** px/mm of the default table (55 inch 16:9 panel at 3840x2160). */
 export const REFERENCE_PX_PER_MM = 3.1529
