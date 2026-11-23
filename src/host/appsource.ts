@@ -43,6 +43,7 @@ export interface DesktopBridge {
   onPicker(cb: () => void): void
   onEnroll(cb: () => void): void
   onCalibrate(cb: () => void): void
+  onLatency(cb: () => void): void
   onAppsChanged(cb: (appId: string | null) => void): void
   onReloadApp(cb: () => void): void
   onChooseWorkspace(cb: () => void): void

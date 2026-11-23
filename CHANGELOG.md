@@ -10,6 +10,15 @@ from one version to the next.
 
 ## [Unreleased]
 
+### Added
+
+- **Table > Latency Check** (`Ctrl+Shift+L`, or `Cmd+Shift+L` on a Mac), for
+  working out where lag on a real table comes from. A ruler ahead of each
+  moving puck and finger shows the whole delay, end to end, and a readout
+  splits it into frame rate, tracker rate, Planchette's own delay, updates
+  while moving, and pucks lost and found. `docs/TABLE.md` has a 20 minute test
+  to run with it.
+
 ### Fixed
 
 - On Windows, editing an interface did not reload it when the workspace path
