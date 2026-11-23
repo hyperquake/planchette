@@ -10,7 +10,11 @@ from one version to the next.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- On Windows, editing an interface did not reload it when the workspace path
+  contained a short (8.3) folder name, such as `C:\Users\RUNNER~1\...`. The
+  watcher now follows the folder's full path.
 
 ## [0.2.0-beta.1] - 2026-11-13
 
@@ -46,12 +50,6 @@ A beta of 0.2.0, for testing on a real table. Published as a pre-release.
   created by 0.1.0 and 0.1.1.
 - `table.version` and the SDK's `hello` now report the app's version. They said
   0.1.0 in every release so far.
-
-### Fixed
-
-- On Windows, editing an interface did not reload it when the workspace path
-  contained a short (8.3) folder name, such as `C:\Users\RUNNER~1\...`. The
-  watcher now follows the folder's full path.
 
 ## [0.1.1] - 2026-08-26
 
