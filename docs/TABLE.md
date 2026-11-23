@@ -208,6 +208,83 @@ typo is copied to `table.json.broken` before anything overwrites it.
 Turn on table input in Settings first. Present mode can be tried on a laptop
 too (it will show the not-1:1 banner).
 
+## Measuring lag
+
+If what the table shows trails the hand, **Table > Latency Check**
+(`Ctrl+Shift+L`) says where the time goes. It draws over whatever interface is
+running, in present mode too, and the same command closes it. Counts start when
+it opens, so close and reopen it between tests.
+
+Lag is four delays added together, and each has its own fix:
+
+    tracker  ->  Planchette  ->  the interface  ->  the display
+
+**The ruler** is the whole delay, end to end. Every puck and finger gets a
+yellow ring exactly where the tracker last reported it. While it moves, a ruler
+runs ahead of the ring along the direction of travel, ticked at 50, 100, 150 and
+200 ms at the current speed. Slide a puck steadily and look at where the
+physical puck's centre sits on the ruler: at the 100 tick, everything between
+the puck and the screen adds up to about 100 ms. With no lag at all, the puck
+would sit in its ring. Software cannot measure this on its own because it cannot
+see the puck; an eye, or a slow-motion phone video paused mid-slide, can.
+
+**The readout** splits it up:
+
+| Line | What it is | Healthy |
+| ---- | ---------- | ------- |
+| Frame rate | How often the screen is redrawn. An interface shares this, so a heavy one pulls it down. *Long* counts frames over 25 ms, each one a visible stutter. | The display's refresh rate, usually 60, with long frames rare |
+| Tracker | Packets per second from the tracker | Steady while things move (the rate for any given tracker is *unconfirmed*) |
+| Planchette | From a packet arriving to it reaching the interface, median and worst | A few ms. More means the computer is busy, usually with the interface |
+| While moving | How often a moving puck or finger gets a new position, and the longest wait | Close to the tracker's rate; gaps under 50 ms |
+| Lost and found | A puck that vanished and came back within a second, and the longest absence | 0, or very rare |
+
+### The test
+
+About 20 minutes, in present mode, with table input on. Bring one puck and a
+phone that films slow motion. Write the numbers down as you go (there is a
+table below).
+
+1. **Idle.** Nothing on the table. Note the frame rate and long frames.
+2. **Tracker rate.** Slide a puck in slow circles for ten seconds. Note
+   packets/s and updates/s while moving.
+3. **End to end.** Slide the puck in a straight line at a steady, medium
+   speed, about a metre in two seconds. Note the tick the real puck sits at.
+   Do it five times, both directions. If it is too quick to read, film it in
+   slow motion and pause mid-slide. Then do the same with one finger.
+4. **Fast.** Slide the puck back and forth hard, ten times. Note *Lost and
+   found* and the longest gap.
+5. **The display.** Find the display's picture settings (its remote or on-screen
+   menu) and look for a *Game*, *PC* or low-latency mode. Note what it was on,
+   switch, and repeat step 3.
+6. **The tracker.** Open the tracker's own software and look for smoothing,
+   filtering or prediction settings. Note what they are, turn smoothing to its
+   lowest, and repeat steps 3 and 4. Change one setting at a time, and put back
+   anything that does not help.
+7. **The interface.** Open the interface people noticed lag in, with the check
+   still open, and use it for a minute. Note the frame rate and long frames.
+   Watch whether the interface's own graphics trail the yellow ring.
+
+| Test | Result |
+| ---- | ------ |
+| Idle: frame rate, long frames | |
+| Tracker: packets/s, updates/s while moving | |
+| End to end, puck: tick (five tries) | |
+| End to end, finger: tick | |
+| Fast: lost and found, longest gap | |
+| Display mode before, after; tick after | |
+| Tracker settings changed; tick and lost and found after | |
+| The interface: frame rate, long frames, trails the ring? | |
+
+### Reading the results
+
+| Seen | Where the time goes | What helps |
+| ---- | ------------------- | ---------- |
+| The ruler says 100 ms or more, Planchette says a few ms, frame rate is steady | The tracker or the display | Steps 5 and 6. A display's image processing alone can add 50 ms or more |
+| Frame rate drops, or long frames climb, only with one interface open | That interface is too heavy for this computer | Make the interface draw less: smaller or fewer canvases, no large blurs or shadows redrawn every frame |
+| The interface's graphics trail the yellow ring | The interface itself: easing, smoothing, or a slow loop | Fix it in the interface. Its graphics should be where the ring is |
+| Updates/s while moving well below packets/s, long gaps, lost and found climbing with speed | The tracker loses the puck's tag in motion | Tracker settings, lighting on the table, clean and flat tags, a slower game |
+| Planchette above about 5 ms | The computer is busy | Usually the interface; check the frame rate with it open |
+
 ## Troubleshooting
 
 | Symptom | Likely cause |
@@ -218,6 +295,7 @@ too (it will show the not-1:1 banner).
 | Every puck vanishes every couple of seconds while sitting still | The tracker sends nothing while nothing moves (*unconfirmed* for any given tracker). Set `tuio.staleMs` to `0`. |
 | After starting Planchette, pucks already on the table do not appear until moved | The tracker only sends positions for things that move. Nudge them. |
 | Everything is mirrored, or turns the wrong way | **Table > Calibrate…** |
+| What the table shows trails the hand | [Measuring lag](#measuring-lag) |
 | Orange *Not 1:1* banner | `surface` does not match the display, or present mode is on the wrong display (`display`). |
 
 ## On-site checklist
@@ -241,3 +319,4 @@ found in this document, replacing the *unconfirmed* notes above.
    `staleMs`, and recovers when it comes back.
 8. Reboot: the computer comes back into present mode, on the right display, with
    the last interface.
+9. Run [the lag test](#the-test) and keep its table of results.

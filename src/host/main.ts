@@ -9,6 +9,7 @@ import { TableModel } from './model'
 import { showUpgradeNotice } from './notice'
 import { setupTableSettings } from './table-ui'
 import { installPresent } from './present'
+import { installLatencyCheck } from './latency'
 import { installTuio } from './tuio'
 import { Overlay } from './overlay'
 import { installSimApi } from './simapi'
@@ -212,6 +213,13 @@ model.subscribe((name, data) => frame.sendEvent(name, data))
 // main process sends nothing, so this is just a subscription.
 const tuioInput = window.planchette && !EMBED ? installTuio(model, window.planchette) : null
 if (inspector && tuioInput) inspector.tagFor = tuioInput.tagFor
+
+// Table > Latency Check. Desktop only: the menu is how it opens, and the numbers
+// worth having come from a tracker.
+if (window.planchette && !EMBED) {
+  const latency = installLatencyCheck({ surfaceEl, model, bridge: window.planchette })
+  window.planchette.onLatency(() => latency.toggle())
+}
 
 // On the table, every puck and finger comes from the tracker. A mouse there is
 // an operator's, for the settings and setup dialogs, not a simulated hand.

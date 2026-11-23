@@ -204,6 +204,18 @@
   /* Calibration is judged against the overlay, so it shows even on the table. */
   body.present.calibrating #overlay { display: block; pointer-events: none; }
 
+  /* ---- Table > Latency Check ---- */
+  #latency-ruler { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+  #latency-ruler[hidden], #latency-hud[hidden] { display: none; }
+  #latency-hud {
+    position: fixed; top: 16px; right: 16px; z-index: 30; pointer-events: none;
+    padding: 10px 14px; border-radius: 8px; background: #000c; color: #ffd400;
+    font: 12px/1.6 var(--mono); white-space: pre;
+  }
+  #latency-hud .latency-hint { color: #fff; font-family: system-ui, sans-serif; white-space: normal; max-width: 46ch; margin-bottom: 6px; }
+  /* As the setup dialogs: at one table pixel per screen pixel, 12px is about 4mm. */
+  body.present #latency-hud { zoom: 2; }
+
   /* ---- settings ---- */
   #settings {
     border: 1px solid var(--line); border-radius: 10px; padding: 0;

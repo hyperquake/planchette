@@ -135,7 +135,10 @@ let tuio = null
 
 function startTuio() {
   tuio = createTuioListener({
-    frame: (f) => send('tuio:frame', f),
+    // Stamped on arrival, so Table > Latency Check can say how long the frame
+    // took to reach the interface. The tracker emits synchronously while the
+    // packet is being handled, so this is the packet's arrival time.
+    frame: (f) => send('tuio:frame', { ...f, t: Date.now() }),
     control: (e) => send('tuio:control', e),
     status: (s) => send('tuio:status', s),
   })
@@ -841,6 +844,7 @@ function buildMenu() {
         { type: 'separator' },
         { label: 'Assign Pucks…', click: () => send('app:enroll') },
         { label: 'Calibrate…', click: () => send('app:calibrate') },
+        { label: 'Latency Check', accelerator: 'CmdOrCtrl+Shift+L', click: () => send('app:latency') },
         {
           label: 'Show table.json',
           click: () => {

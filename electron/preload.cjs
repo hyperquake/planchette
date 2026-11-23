@@ -29,6 +29,7 @@ contextBridge.exposeInMainWorld('planchette', {
   onPicker: (cb) => ipcRenderer.on('app:picker', () => cb()),
   onEnroll: (cb) => ipcRenderer.on('app:enroll', () => cb()),
   onCalibrate: (cb) => ipcRenderer.on('app:calibrate', () => cb()),
+  onLatency: (cb) => ipcRenderer.on('app:latency', () => cb()),
 
   onAppsChanged: (cb) => ipcRenderer.on('apps:changed', (_e, appId) => cb(appId)),
   onReloadApp: (cb) => ipcRenderer.on('app:reload', () => cb()),

@@ -670,6 +670,46 @@ try {
         "document.getElementById('enroll').close(); document.getElementById('calibrate').close(); return 1",
       )
 
+      // Table > Latency Check: a puck slides, is lost for one frame and comes back
+      // under a new session. The readout must see the tracker, Planchette's own
+      // delay, the moving update rate, and the dropout.
+      await inMain("BrowserWindow.getAllWindows()[0].webContents.send('app:latency'); return 1")
+      for (let i = 0; i < 12; i++) {
+        objs[0].x += 0.01
+        await sender.frame(objs, curs)
+        await sleep(40)
+      }
+      await sender.frame(objs.slice(1), curs)
+      await sleep(40)
+      objs[0].sid = 15
+      await pump(3)
+      await sleep(1100) // one status poll, so packets/s is filled in
+      const latency = await evaluate(`
+        const hud = document.getElementById('latency-hud');
+        const ruler = document.getElementById('latency-ruler');
+        return { text: hud?.innerText ?? '', shown: hud ? !hud.hidden : false, ruler: ruler ? !ruler.hidden : false };
+      `)
+      check(
+        'latency: the check opens over the interface',
+        latency?.shown && latency.ruler && latency.text.includes('Latency check'),
+        JSON.stringify(latency),
+      )
+      check(
+        'latency: tracker rate, Planchette delay and moving updates are measured',
+        /\d+ packets\/s/.test(latency?.text ?? '') &&
+          /Planchette\s+\d+ ms, max \d+ ms/.test(latency?.text ?? '') &&
+          /While moving\s+\d+ updates\/s/.test(latency?.text ?? ''),
+        latency?.text,
+      )
+      check(
+        'latency: a puck lost and found again is counted',
+        /Lost and found\s+1, longest \d+ ms/.test(latency?.text ?? ''),
+        latency?.text,
+      )
+      await inMain("BrowserWindow.getAllWindows()[0].webContents.send('app:latency'); return 1")
+      const closed = await evaluate("return document.getElementById('latency-hud').hidden")
+      check('latency: the same command closes it', closed === true)
+
       // The tracker goes silent: everything must leave rather than haunt the table.
       await sleep(3000)
       const silent = await tableState()
