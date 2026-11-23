@@ -10,6 +10,13 @@ from one version to the next.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.2.0-beta.2] - 2026-11-23
+
+A second beta of 0.2.0, with tools for measuring lag on a real table.
+Published as a pre-release.
+
 ### Added
 
 - **Table > Latency Check** (`Ctrl+Shift+L`, or `Cmd+Shift+L` on a Mac), for
@@ -134,7 +141,8 @@ First release.
 - Four surface presets, an inspector showing raw wire values, and puck
   arrangements that survive a reload.
 
-[Unreleased]: https://github.com/hyperquake/planchette/compare/v0.2.0-beta.1...HEAD
+[Unreleased]: https://github.com/hyperquake/planchette/compare/v0.2.0-beta.2...HEAD
+[0.2.0-beta.2]: https://github.com/hyperquake/planchette/compare/v0.2.0-beta.1...v0.2.0-beta.2
 [0.2.0-beta.1]: https://github.com/hyperquake/planchette/compare/v0.1.1...v0.2.0-beta.1
 [0.1.1]: https://github.com/hyperquake/planchette/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/hyperquake/planchette/releases/tag/v0.1.0
