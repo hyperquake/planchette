@@ -5,6 +5,9 @@ CHANGELOG.md section above this and publishes the two together. Nothing
 version-specific belongs in here.
 -->
 
+Try it in your browser, or find the newest download, at
+[planchette.tools.hyperquake.com](https://planchette.tools.hyperquake.com).
+
 ## Installing
 
 These builds are **unsigned**, so both systems object the first time. Once per

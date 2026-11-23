@@ -7,6 +7,9 @@ table interfaces without the hardware in front of them.
 
 Interfaces are plain HTML, CSS, and JavaScript. No build step, no framework.
 
+**[planchette.tools.hyperquake.com](https://planchette.tools.hyperquake.com)** shows
+it in motion, runs it live in your browser, and links the newest builds.
+
 ![Four pucks on the arcane-table example, arcs webbing between them](docs/images/arcane-table.jpg)
 
 *`arcane-table`: four pucks, each with a rune ring, arcing to its neighbours.*
