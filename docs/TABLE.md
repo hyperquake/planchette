@@ -17,10 +17,19 @@ confirmed.
 - The table's computer, running Windows (the `Planchette-<version>-setup.exe`
   from the GitHub release) or macOS.
 - A tracker that sends **TUIO 1.1** over UDP: objects as `/tuio/2Dobj`, fingers
-  as `/tuio/2Dcur`. MultiTaction's stack can: add a `TuioSender` block to
-  `config.txt`, or point the on-screen display at a TUIO listener, then run
-  `MTServer` (*unconfirmed*; check the MultiTaction documentation for the exact
-  block). reacTIVision and the TUIO simulators also work.
+  as `/tuio/2Dcur`. Trackers differ in how they are pointed at a listener:
+  - **A tracker box with its own web page** (confirmed 2026-11-24 on a 65 inch
+    NEC MultiSync M651): a separate box on its own Ethernet network, configured
+    from a page called *Touch & Object Assistant* in a browser. No `MTServer`,
+    no `config.txt`. See [Point the tracker at Planchette](#point-the-tracker-at-planchette).
+  - **MultiTaction's own stack:** add a `TuioSender` block to `config.txt`, or
+    point the on-screen display at a TUIO listener, then run `MTServer`
+    (*unconfirmed*; check the MultiTaction documentation for the exact block).
+  - reacTIVision and the TUIO simulators also work.
+
+  Pucks and fingers arrive over the network as TUIO, so a USB cable between
+  the panel and the computer is not needed for Planchette (confirmed: everything
+  worked with it unplugged).
 - A workspace folder holding the interfaces, the same kind designers use. See
   [Getting interfaces onto the table](#getting-interfaces-onto-the-table).
 
@@ -39,9 +48,20 @@ before changing them.
 
 Use the installer, `Planchette-<version>-setup.exe` from the GitHub release, not
 the portable `.exe`: the installer puts the app in a fixed place, so the startup
-shortcut below keeps working through upgrades. The build is unsigned, so the
-first run shows *Windows protected your PC*; click **More info**, then
-**Run anyway**. Once per machine.
+shortcut below keeps working through upgrades.
+
+Until 0.2.0 is released, table support is only in the **pre-releases**
+(0.2.0-beta.1 and later). The release GitHub marks *Latest* is still 0.1.1,
+which has none of this, so take the newest 0.2.0 beta from the releases page.
+
+The build is unsigned, so expect warnings twice:
+
+- **Downloading.** Edge may say the file is not commonly downloaded and, at
+  first, offer no *Keep anyway*. It is usually behind the **...** menu on the
+  download, under **Keep**, then **Show more** (*unconfirmed*; it was found on
+  the NEC table's PC, but the path was not written down).
+- **First run.** *Windows protected your PC*; click **More info**, then
+  **Run anyway**. Once per machine.
 
 Upgrading later is the same: run the new installer. `table.json` (puck
 assignments, calibration) lives in Planchette's settings folder, not in the app,
@@ -55,13 +75,33 @@ the main display, so this is all it needs; `display` in `table.json` exists for
 when that is not possible, but its numbering is not guaranteed to match the
 numbers Windows shows.
 
-Set the table's resolution to its native one (3840 x 2160 for the 55 inch
-panel). Windows display *scaling* does not matter: present mode overrides it.
+Set the table's resolution to its native one (3840 x 2160 for both the 55 and
+the 65 inch panels). Windows display *scaling* does not matter: present mode
+overrides it. Check it again after a reboot: on the NEC table it once fell back
+to 1920 x 1080 by itself.
+
+Getting a picture at all can take some trying:
+
+- **A black table is off.** On the NEC, four buttons on the back edge turn it
+  on. The first one is the input choice; set it to **DisplayPort**.
+- **"No signal" means try another output on the computer.** Which output works
+  depends on the computer. On the NEC table's PC, only the **mini DisplayPort**
+  of its small NVIDIA card (an RTX A400) gave a picture; the DisplayPort outputs
+  of the two large cards (RTX A6000) gave none, cause not found.
+- **Refresh rate.** That link only offered 3840 x 2160 at **30 Hz**. Interfaces
+  animate at the display's rate, so 60 Hz is worth chasing: a certified
+  DisplayPort 1.2 or 1.4 cable, or a setting in the panel's own menu, may allow
+  it (*unconfirmed*). Note the rate in the [lag test](#the-test).
 
 ### Stop touch from reaching Windows
 
 The table's fingers reach interfaces through TUIO, but if the panel also reports
 touch to Windows, a hand on the table edge can open Windows' own panels.
+
+If Windows gets no touch from the panel at all, there is nothing to do here, and
+the **Touch** settings page below will not exist. That was the case on the NEC
+table, where the tracker is a separate box and the panel's USB cable was not
+connected.
 
 - **Edge swipes.** On Pro and Enterprise editions: run `gpedit.msc`, go to
   **Computer Configuration > Administrative Templates > Windows Components >
@@ -97,6 +137,9 @@ touch to Windows, a hand on the table edge can open Windows' own panels.
    from the desktop).
 3. Once the table is set up, set `"present": true` in `table.json` (step 6
    below), so it starts straight into present mode.
+4. Stop other apps opening on top of it. Open **Task Manager > Startup apps**
+   and disable anything that shows a window at sign-in. On the NEC table's PC,
+   a **Box** app opened over Planchette until it was disabled there.
 
 This only runs once someone signs in. For a table that should come back by
 itself after a power cut, the account also has to sign in automatically, which
@@ -110,7 +153,10 @@ a designer's laptop.
 
 - **Simplest:** copy the designers' workspace folder onto the table's computer,
   then in Planchette open **Settings** and **Add…** that folder. To update,
-  copy again. Planchette notices changed files and reloads by itself.
+  copy again. Planchette notices changed files and reloads by itself
+  (confirmed on the table: copied interfaces appeared with no reload). A
+  workspace you have added is listed in the workspace dropdown at the bottom of
+  the window; if it is not the one showing, pick it there.
 - **A synced folder** (Google Drive, Dropbox, a git checkout) also works, and
   then designers' saves appear on the table. That is handy during a build and
   risky during an event: a half-synced change shows up live. Freeze it, or
@@ -121,20 +167,28 @@ those starting with `_`, so remove experiments the public should not see.
 
 ## Setting a table up
 
-1. **Point the tracker at Planchette.** By default Planchette listens on
-   `127.0.0.1:3333`, the TUIO default, which suits a tracker on the same
-   computer. If the tracker is on another machine, set `tuio.host` to
-   `0.0.0.0` in `table.json` (below) and expect a firewall prompt the first time.
-2. **Turn on table input.** **Settings** (`Ctrl+,`) > **Table input**. The status
-   line should say *Listening* and show packets arriving.
+1. **Point the tracker at Planchette.** See
+   [below](#point-the-tracker-at-planchette). By default Planchette listens on
+   `127.0.0.1:3333`, the TUIO default, which only accepts a tracker on the same
+   computer. A tracker on another machine or box needs `tuio.host` set to
+   `0.0.0.0` in `table.json` (below); expect a firewall prompt the first time.
+2. **Turn on table input.** **File > Settings…** > **Table input**. The status
+   line should say *Listening* and show packets arriving. (Up to 0.2.0-beta.2,
+   the shortcut `Ctrl+,` did nothing on Windows; use the menu.)
 3. **Assign the pucks.** **Table > Assign Pucks…** Put one puck down; it appears
    as *Tag 117* (or whatever is printed on it). Click **Make it puck 1**. Lift it,
    put the next one down, and so on. These numbers are what interfaces use, so
    match what the designers built against; give each a label so the next person
-   knows which is which.
+   knows which is which. If the printed tag numbers already are the numbers the
+   interfaces use, as they were on the NEC table, skip this: until anything is
+   assigned, tags pass through as their own numbers. The control puck does not
+   count as an assignment, but assigning even one normal puck does: from then
+   on every unassigned tag is ignored, unless `unmapped` is `passthrough`.
 4. **Choose a control puck** (optional, recommended). In the same dialog, put a
    spare puck down and click **Make it the control puck**. On the table, putting
-   it down opens the interface picker. It never reaches an interface.
+   it down opens the interface picker. It never reaches an interface. Its ring
+   only appears in present mode, so in the normal window the control puck
+   seems to do nothing; that is expected.
 5. **Calibrate.** **Table > Calibrate…** Each puck is drawn where Planchette
    thinks it is, with a line for its north. Slide a puck along each edge; if it
    is mirrored, use the flips. Turn it; if the line turns the wrong way, use
@@ -149,12 +203,42 @@ those starting with `_`, so remove experiments the public should not see.
 Every change in steps 3 to 5 is saved and applied at once, including to pucks
 already sitting on the table.
 
+### Point the tracker at Planchette
+
+For a tracker box on its own network with a web page, as on the NEC table
+(tracker at `10.0.0.20`):
+
+1. **Give the computer an address on the tracker's network.** The Ethernet port
+   the tracker is plugged into may have no usable address: `ping 10.0.0.20`
+   fails. Set a fixed one on the same subnet, no gateway. From an administrator
+   PowerShell (check the adapter's name with `Get-NetAdapter`):
+
+       New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress 10.0.0.50 -PrefixLength 24
+
+   `ping 10.0.0.20` should now answer.
+2. **Tell the tracker where to send.** Open `http://10.0.0.20` in a browser.
+   On the *Touch & Object Assistant* page, enter the computer's address
+   (`10.0.0.50`) under **Your IP address** with the on-screen keypad and press
+   **Send IP address**. The list of targets should now show `10.0.0.50:3333`.
+   Leave any other entries alone: they are other computers the tracker also
+   feeds.
+3. **Listen on the network.** In `table.json`, set `tuio.enabled` to `true`,
+   `tuio.host` to `0.0.0.0` and `tuio.port` to `3333`, then restart Planchette.
+   **File > Settings…** should say *Listening on 0.0.0.0:3333* and show
+   packets.
+
+The two addresses are easy to mix up. The tracker page wants the computer's
+address *on the tracker's network* (`10.0.0.50`), never `127.0.0.1`; Planchette
+wants `0.0.0.0`, which means "any of this computer's addresses".
+
 ## In present mode
 
 - **Changing interface:** put the control puck down. The interfaces appear in a
-  ring around it; turning the puck highlights one, and touching any of them
-  opens it. Lift the puck to close the ring (it waits a moment, because tracking
-  flickers). With a keyboard: `Ctrl+Shift+P`, arrows, `Enter`, `Esc`.
+  ring around it. Touch one to open it. Turning the puck moves a highlight
+  round the ring, but the highlight only shows where the puck points: turning
+  never opens anything, and it cannot be hidden. Lift the puck to close the
+  ring (it waits a moment, because tracking flickers). With a keyboard:
+  `Ctrl+Shift+P`, arrows, `Enter`, `Esc`.
 - **Leaving:** **Table > Leave Present Mode**, or `Ctrl+Shift+F`. Launching with
   `--no-present` also overrides `table.json`, for when a table that boots into
   present mode needs the authoring UI.
@@ -176,7 +260,7 @@ typo is copied to `table.json.broken` before anything overwrites it.
   "version": 1,
   "present": false,
   "display": null,
-  "surface": "table55-4k",
+  "surface": "table65-4k",
   "tuio": { "enabled": false, "host": "127.0.0.1", "port": 3333, "staleMs": 2000 },
   "calibration": { "flipX": false, "flipY": false, "angleOffsetDeg": 0, "angleReversed": false },
   "pucks": [{ "markerId": 1, "tag": 117, "label": "red" }],
@@ -289,8 +373,14 @@ table below).
 
 | Symptom | Likely cause |
 | ------- | ------------ |
+| The table is black | It is off. Use the buttons on its back edge. |
+| The table says *No signal* | Its input is not set to DisplayPort, or the computer's output is the wrong one. Try another. |
+| Resolution is 1920 x 1080 after a reboot | Windows fell back. Set 3840 x 2160 again in **Settings > System > Display**. |
+| `ping` to the tracker fails | The computer has no address on the tracker's network. [Give it one](#point-the-tracker-at-planchette). |
 | Status says *port 3333 is already in use* | Another TUIO listener is running, often the vendor's own demo app. Close it, or move one of them to another port. |
-| Listening, but 0 packets | The tracker is sending somewhere else (check its host and port), or it is on another machine and `tuio.host` is still `127.0.0.1`. |
+| Listening, but 0 packets | The tracker is sending somewhere else (check its host and port, or its list of targets), or it is on another machine and `tuio.host` is still `127.0.0.1`. |
+| The control puck does nothing | Its ring only shows in present mode. |
+| Another app's window covers Planchette after sign-in | Disable that app in **Task Manager > Startup apps**. |
 | Pucks show in the inspector as *unmapped* and nothing happens | They have no assignment. **Table > Assign Pucks…** |
 | Every puck vanishes every couple of seconds while sitting still | The tracker sends nothing while nothing moves (*unconfirmed* for any given tracker). Set `tuio.staleMs` to `0`. |
 | After starting Planchette, pucks already on the table do not appear until moved | The tracker only sends positions for things that move. Nudge them. |
@@ -320,3 +410,26 @@ found in this document, replacing the *unconfirmed* notes above.
 8. Reboot: the computer comes back into present mode, on the right display, with
    the last interface.
 9. Run [the lag test](#the-test) and keep its table of results.
+10. Open each interface the public will see and check no development or tuning
+    panel is showing (some interfaces carry files such as `devpanel.js` or
+    `tuning-panel.js`).
+
+### NEC MultiSync M651, 65 inch (2026-11-24)
+
+Set up with 0.2.0-beta.1 on a Windows PC with the separate tracker box
+described [above](#point-the-tracker-at-planchette). `surface` is `table65-4k`.
+
+| Item | Result |
+| ---- | ------ |
+| 1. Computer prepared | Windows gets no touch from the panel, so the touch settings did not apply. Edge swipes, edition and version not recorded. |
+| 2. Packets with nothing on the table | Not recorded |
+| 3. Pucks assigned | Printed tags already matched the interfaces; only the control puck was assigned |
+| 4. Calibrate | Positions and finger positions correct with no flips, no reversal and no angle offset. Pointing at the top edge not run, so puck rotation is *unconfirmed* |
+| 5. Interfaces with pucks and fingers | All pucks tracked; several fingers at once work |
+| 6. Hand over a puck | Not done |
+| 7. Unplug the tracker | Not done |
+| 8. Reboot | Comes back into present mode on the table |
+| 9. Lag test | In progress |
+
+Also confirmed: `Ctrl+Shift+F` leaves present mode. Not yet tried: `Ctrl+R`
+(reload) in present mode.

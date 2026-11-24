@@ -796,7 +796,13 @@ function buildMenu() {
           ? []
           : [
               { type: 'separator' },
-              { label: 'Settings…', accelerator: 'CmdOrCtrl+,', click: () => send('app:settings') },
+              {
+                label: 'Settings…',
+                // Shown only: the key itself is caught in before-input-event (createWindow).
+                accelerator: 'CmdOrCtrl+,',
+                registerAccelerator: false,
+                click: () => send('app:settings'),
+              },
             ]),
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' },
@@ -908,6 +914,16 @@ async function createWindow() {
   win.once('ready-to-show', () => win.show())
   // Every load, not once: Reload Simulator gives the renderer an empty model.
   win.webContents.on('did-finish-load', replayTuio)
+  // On Windows the menu's `Ctrl+,` accelerator never fires (reproduced on 0.2.0-beta.1,
+  // while `Ctrl+I` in the same menu does), so catch the key here instead. The
+  // menu item keeps showing it but does not register it, so it cannot fire twice.
+  if (process.platform !== 'darwin') {
+    win.webContents.on('before-input-event', (event, input) => {
+      if (input.type !== 'keyDown' || !input.control || input.alt || input.shift || input.key !== ',') return
+      event.preventDefault()
+      send('app:settings')
+    })
+  }
   buildMenu()
   watchWorkspace()
 

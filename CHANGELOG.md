@@ -10,7 +10,10 @@ from one version to the next.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- On Windows, `Ctrl+,` did not open Settings. **File > Settings…** always
+  worked, and still does.
 
 ## [0.2.0-beta.2] - 2026-11-23
 
