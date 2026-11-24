@@ -10,6 +10,20 @@ from one version to the next.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.2.0-beta.3] - 2026-11-24
+
+A third beta of 0.2.0, after the first setup on a real table. Published as a
+pre-release.
+
+### Changed
+
+- `docs/TABLE.md` now covers what the first table setup found: a tracker box
+  configured from its own web page, giving the computer an address on the
+  tracker's network, choosing the display output, and the checklist results
+  for the 65 inch NEC table.
+
 ### Fixed
 
 - On Windows, `Ctrl+,` did not open Settings. **File > Settings…** always
@@ -144,7 +158,8 @@ First release.
 - Four surface presets, an inspector showing raw wire values, and puck
   arrangements that survive a reload.
 
-[Unreleased]: https://github.com/hyperquake/planchette/compare/v0.2.0-beta.2...HEAD
+[Unreleased]: https://github.com/hyperquake/planchette/compare/v0.2.0-beta.3...HEAD
+[0.2.0-beta.3]: https://github.com/hyperquake/planchette/compare/v0.2.0-beta.2...v0.2.0-beta.3
 [0.2.0-beta.2]: https://github.com/hyperquake/planchette/compare/v0.2.0-beta.1...v0.2.0-beta.2
 [0.2.0-beta.1]: https://github.com/hyperquake/planchette/compare/v0.1.1...v0.2.0-beta.1
 [0.1.1]: https://github.com/hyperquake/planchette/compare/v0.1.0...v0.1.1
